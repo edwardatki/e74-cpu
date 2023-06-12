@@ -330,9 +330,44 @@ mov IR [PC++]			; Fetch
 mov ACC [SP++]			; Load accumulator from stack
 mov RES [SP] NONE end	; Operate on value from stack and store in result
 
-; 0x20 JLT i16
+; 0x20 JL i16
 #addr 0x200
 mov IR [PC++]			; Fetch
 mov RES [PC++]			; Load immediate to result
 mov PCL [PC++] LESS		; Load immediate to PC low
 mov PCH RES LESS end	; Store result to PC high
+
+; 0x21 JM i16
+#addr 0x210
+mov IR [PC++]			; Fetch
+mov RES [PC++]			; Load immediate to result
+mov PCL [PC++] MORE		; Load immediate to PC low
+mov PCH RES MORE end	; Store result to PC high
+
+; 0x22 JE i16
+#addr 0x220
+mov IR [PC++]			; Fetch
+mov RES [PC++]			; Load immediate to result
+mov PCL [PC++] EQUAL	; Load immediate to PC low
+mov PCH RES EQUAL end	; Store result to PC high
+
+; 0x23 JNE i16
+#addr 0x230
+mov IR [PC++]			; Fetch
+mov RES [PC++]			; Load immediate to result
+mov PCL [PC++] !EQUAL	; Load immediate to PC low
+mov PCH RES !EQUAL end	; Store result to PC high
+
+; 0x24 JC i16
+#addr 0x240
+mov IR [PC++]			; Fetch
+mov RES [PC++]			; Load immediate to result
+mov PCL [PC++] CARRY	; Load immediate to PC low
+mov PCH RES CARRY end	; Store result to PC high
+
+; 0x25 JNC i16
+#addr 0x250
+mov IR [PC++]			; Fetch
+mov RES [PC++]			; Load immediate to result
+mov PCL [PC++] !CARRY	; Load immediate to PC low
+mov PCH RES !CARRY end	; Store result to PC high

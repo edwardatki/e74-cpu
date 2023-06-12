@@ -43,7 +43,12 @@
 
 	CMP => 0x19
 
-	JLT {a: i16} => 0x20 @ a
+	JL {a: i16} => 0x20 @ a
+	JM {a: i16} => 0x21 @ a
+	JE {a: i16} => 0x22 @ a
+	JNE {a: i16} => 0x23 @ a
+	JC {a: i16} => 0x24 @ a
+	JNC {a: i16} => 0x25 @ a
 }
 
 start:
@@ -57,17 +62,20 @@ PUSH 0
 	PUSH [BP]
 	CALL print_hex
 	POP
+	POP BP
 
 	PUSH 1
 	ADD
 	PUSH 8
 	CMP
-	JLT .less
+	JL .less
 	POP
 	PUSH 0
+	PUSH BP
 	PUSH "\n"
 	jmp .endif
 	.less:
+	PUSH BP
 	PUSH " "
 	.endif:
 	CALL putc
@@ -94,7 +102,7 @@ print_hex:
 	SHR
 	PUSH 0x0A	; Compare
 	CMP
-	JLT .skip1	; If 0-9
+	JL .skip1	; If 0-9
 	PUSH 0x07	; ASCII A-F
 	ADD
 	.skip1:
@@ -115,7 +123,7 @@ print_hex:
 	NAND
 	PUSH 0x0A	; Compare
 	CMP
-	JLT .skip2	; If 0-9
+	JL .skip2	; If 0-9
 	PUSH 0x07	; ASCII A-F
 	ADD
 	.skip2:
