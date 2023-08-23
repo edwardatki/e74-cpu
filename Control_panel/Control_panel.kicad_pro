@@ -45,21 +45,11 @@
         "silk_text_thickness": 0.15,
         "silk_text_upright": false,
         "zones": {
-          "min_clearance": 0.0
+          "min_clearance": 0.5
         }
       },
-      "diff_pair_dimensions": [
-        {
-          "gap": 0.0,
-          "via_gap": 0.0,
-          "width": 0.0
-        }
-      ],
-      "drc_exclusions": [
-        "silk_overlap|152717500|115700000|c52d0a4e-bd46-41f6-bd54-22e08e80653e|0377192c-0260-41fd-b4b2-de93493f58a1",
-        "silk_overlap|153352500|115700000|fccf3082-0bf2-47af-8875-9488df0be675|0377192c-0260-41fd-b4b2-de93493f58a1",
-        "starved_thermal|153035000|120015000|c1307185-bec7-4524-81cf-71620eba696c|9eff43b8-a2db-471d-a6f2-3c7d7f9b1bec|B.Cu"
-      ],
+      "diff_pair_dimensions": [],
+      "drc_exclusions": [],
       "meta": {
         "version": 2
       },
@@ -175,17 +165,8 @@
           "td_width_to_size_filter_ratio": 0.9
         }
       ],
-      "track_widths": [
-        0.0,
-        0.25,
-        0.5
-      ],
-      "via_dimensions": [
-        {
-          "diameter": 0.0,
-          "drill": 0.0
-        }
-      ],
+      "track_widths": [],
+      "via_dimensions": [],
       "zones_allow_external_fillets": false
     },
     "layer_presets": [],
@@ -411,7 +392,7 @@
     "pinned_symbol_libs": []
   },
   "meta": {
-    "filename": "Register_board.kicad_pro",
+    "filename": "Control_panel.kicad_pro",
     "version": 1
   },
   "net_settings": {
@@ -439,12 +420,7 @@
     },
     "net_colors": null,
     "netclass_assignments": null,
-    "netclass_patterns": [
-      {
-        "netclass": "Default",
-        "pattern": "ADDRESS"
-      }
-    ]
+    "netclass_patterns": []
   },
   "pcbnew": {
     "last_paths": {
@@ -493,7 +469,7 @@
   },
   "sheets": [
     [
-      "14a87560-5200-4df5-b77f-643796d5b57f",
+      "0333a382-58d0-4165-a40c-9f547e6b2f63",
       ""
     ]
   ],
