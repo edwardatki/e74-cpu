@@ -2979,10 +2979,12 @@ c8201be 14*8c0200ff e03025e c8201be 14*8c0200ff e03025e c8201be 14*8c0200ff
     </comp>
     <comp lib="4" loc="(2090,550)" name="Register">
       <a name="appearance" val="logisim_evolution"/>
+      <a name="trigger" val="low"/>
       <a name="width" val="2"/>
     </comp>
     <comp lib="4" loc="(2090,660)" name="Register">
       <a name="appearance" val="logisim_evolution"/>
+      <a name="trigger" val="low"/>
       <a name="width" val="2"/>
     </comp>
     <comp lib="4" loc="(350,1100)" name="Register">
@@ -3032,7 +3034,11 @@ c8201be 14*8c0200ff e03025e c8201be 14*8c0200ff e03025e c8201be 14*8c0200ff
     <comp lib="5" loc="(770,860)" name="TTY"/>
     <comp lib="5" loc="(830,1100)" name="Button"/>
     <comp lib="5" loc="(850,910)" name="Keyboard"/>
-    <comp lib="8" loc="(2345,1135)" name="Text">
+    <comp lib="8" loc="(1209,1011)" name="Text">
+      <a name="font" val="SansSerif plain 12"/>
+      <a name="text" val="TODO: Opcode 0x00 should reset program counter"/>
+    </comp>
+    <comp lib="8" loc="(2345,1134)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="Write on rising edge"/>
     </comp>
