@@ -209,13 +209,19 @@
     mov a, c => 0xA5
     mov a, d => 0xA6
     mov a, e => 0xA7
+
+    mov bc, sp-{i: i8} => 0xA8 @ i
+    mov de, sp-{i: i8} => 0xA9 @ i
+
+    mov sp, sp+{i: i8} => 0xAA @ i
+    mov sp, sp-{i: i8} => 0xAB @ i
 }
 
 ; cmp i8
-; je        ; Equal
-; jne       ; Not equal
-; jc i16    ; More than
-; jnc i16   ; Less than or equal
+; je        ; a == i8
+; jne       ; a != i8
+; jc i16    ; a > i8
+; jnc i16   ; a <= i8
 
 #bankdef RAM
 {

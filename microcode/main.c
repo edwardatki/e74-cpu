@@ -267,15 +267,47 @@ int main() {
                         // --- XOR B ---
 
                         // --- ADD C ---
+                        if (opcode == 0x17) {
+                            // TMP = C
+                            addStep(nBC_OUT | nAL_OUT | TMP_WRITE | ALU_OP_A);
+
+                            // A minus TMP
+                            addStep(nTMP_OUT | nACC_OUT | ACC_WRITE | ALU_OP_A_PLUS_B | FLAGS_USR_UPDATE);
+                        }
+
                         // --- SUB C ---
+                        if (opcode == 0x18) {
+                            // TMP = C
+                            addStep(nBC_OUT | nAL_OUT | TMP_WRITE | ALU_OP_A);
+
+                            // A minus TMP
+                            addStep(nTMP_OUT | nACC_OUT | ACC_WRITE | ALU_OP_A_MINUS_B | FLAGS_USR_UPDATE);
+                        }
+
                         // --- AND C ---
                         // --- NAND C ---
                         // --- OR C ---
                         // --- NOR C ---
                         // --- XOR C ---
 
-                        // --- ADD B ---
+                        // --- ADD D ---
+                        if (opcode == 0x1E) {
+                            // TMP = D
+                            addStep(nDE_OUT | nAH_OUT | TMP_WRITE | ALU_OP_A);
+
+                            // A minus TMP
+                            addStep(nTMP_OUT | nACC_OUT | ACC_WRITE | ALU_OP_A_PLUS_B | FLAGS_USR_UPDATE);
+                        }
+
                         // --- SUB D ---
+                        if (opcode == 0x1F) {
+                            // TMP = D
+                            addStep(nDE_OUT | nAH_OUT | TMP_WRITE | ALU_OP_A);
+
+                            // A minus TMP
+                            addStep(nTMP_OUT | nACC_OUT | ACC_WRITE | ALU_OP_A_MINUS_B | FLAGS_USR_UPDATE);
+                        }
+
                         // --- AND D ---
                         // --- NAND D ---
                         // --- OR D ---
@@ -283,7 +315,23 @@ int main() {
                         // --- XOR D ---
 
                         // --- ADD E ---
+                        if (opcode == 0x25) {
+                            // TMP = E
+                            addStep(nDE_OUT | nAL_OUT | TMP_WRITE | ALU_OP_A);
+
+                            // A minus TMP
+                            addStep(nTMP_OUT | nACC_OUT | ACC_WRITE | ALU_OP_A_PLUS_B | FLAGS_USR_UPDATE);
+                        }
+
                         // --- SUB E ---
+                        if (opcode == 0x26) {
+                            // TMP = E
+                            addStep(nDE_OUT | nAL_OUT | TMP_WRITE | ALU_OP_A);
+
+                            // A minus TMP
+                            addStep(nTMP_OUT | nACC_OUT | ACC_WRITE | ALU_OP_A_MINUS_B | FLAGS_USR_UPDATE);
+                        }
+
                         // --- AND E ---
                         // --- NAND E ---
                         // --- OR E ---
@@ -681,37 +729,94 @@ int main() {
                         }
                         
                         // --- CMP C ---
+                        if (opcode == 0x68) {
+                            // TMP = C
+                            addStep(nBC_OUT | nAL_OUT | TMP_WRITE | ALU_OP_A);
+
+                            // A minus TMP minus 1
+                            addStep(nTMP_OUT | nACC_OUT | ALU_OP_A_MINUS_B_MINUS_1 | FLAGS_USR_UPDATE);
+                        }
+
                         // --- CMP D ---
+                        if (opcode == 0x69) {
+                            // TMP = D
+                            addStep(nDE_OUT | nAH_OUT | TMP_WRITE | ALU_OP_A);
+
+                            // A minus TMP minus 1
+                            addStep(nTMP_OUT | nACC_OUT | ALU_OP_A_MINUS_B_MINUS_1 | FLAGS_USR_UPDATE);
+                        }
+
                         // --- CMP E ---
+                        if (opcode == 0x6A) {
+                            // TMP = E
+                            addStep(nDE_OUT | nAL_OUT | TMP_WRITE | ALU_OP_A);
+
+                            // A minus TMP minus 1
+                            addStep(nTMP_OUT | nACC_OUT | ALU_OP_A_MINUS_B_MINUS_1 | FLAGS_USR_UPDATE);
+                        }
+
                         // --- CMP [BC] ---
                         // --- CMP [DE] ---
 
                         // --- MOV A, [BC] ---
                         if (opcode == 0x6D) {
                             // A = RAM[BC]
-                            addStep(nBC_OUT | nRAM_OUT | nACC_OUT | ACC_WRITE | ALU_OP_B | FLAGS_USR_UPDATE);
+                            addStep(nBC_OUT | nRAM_OUT | ACC_WRITE | ALU_OP_B);
                         }
 
                         // --- MOV D, [BC] ---
+                        if (opcode == 0x6E) {
+                            // D = RAM[BC]
+                            addStep(nBC_OUT | nRAM_OUT | D_WRITE | ALU_OP_B);
+                        }
+
                         // --- MOV E, [BC] ---
+                        if (opcode == 0x6F) {
+                            // E = RAM[BC]
+                            addStep(nBC_OUT | nRAM_OUT | E_WRITE | ALU_OP_B);
+                        }
 
                         // --- MOV A, [DE] ---
                         if (opcode == 0x70) {
                             // A = RAM[DE]
-                            addStep(nDE_OUT | nRAM_OUT | nACC_OUT | ACC_WRITE | ALU_OP_B | FLAGS_USR_UPDATE);
+                            addStep(nDE_OUT | nRAM_OUT | ACC_WRITE | ALU_OP_B);
                         }
 
                         // --- MOV B, [DE] ---
+                        if (opcode == 0x71) {
+                            // B = RAM[DE]
+                            addStep(nDE_OUT | nRAM_OUT | B_WRITE | ALU_OP_B);
+                        }
+
                         // --- MOV C, [DE] ---
+                        if (opcode == 0x72) {
+                            // C = RAM[DE]
+                            addStep(nDE_OUT | nRAM_OUT | C_WRITE | ALU_OP_B);
+                        }
 
                         // --- MOV [BC], A ---
                         if (opcode == 0x73) {
                             // RAM[BC] = A
-                            addStep(nBC_OUT | nRAM_WRITE | nACC_OUT | nALU_OUT | ALU_OP_B);
+                            addStep(nBC_OUT | nRAM_WRITE | nACC_OUT | nALU_OUT | ALU_OP_A);
                         }
 
                         // --- MOV [BC], D ---
+                        if (opcode == 0x74) {
+                            // TMP = D
+                            addStep(nDE_OUT | nAH_OUT | TMP_WRITE | ALU_OP_A);
+
+                            // RAM[BC] = TMP
+                            addStep(nBC_OUT | nRAM_WRITE | nTMP_OUT);
+                        }
+
                         // --- MOV [BC], E ---
+                        if (opcode == 0x75) {
+                            // TMP = L
+                            addStep(nDE_OUT | nAL_OUT | TMP_WRITE | ALU_OP_A);
+                            
+                            // RAM[BC] = TMP
+                            addStep(nBC_OUT | nRAM_WRITE | nTMP_OUT);
+                        }
 
                         // --- MOV [DE], A ---
                         if (opcode == 0x76) {
@@ -720,7 +825,22 @@ int main() {
                         }
 
                         // --- MOV [DE], B ---
+                        if (opcode == 0x77) {
+                            // TMP = B
+                            addStep(nBC_OUT | nAH_OUT | TMP_WRITE | ALU_OP_A);
+                            
+                            // RAM[DE] = TMP
+                            addStep(nDE_OUT | nRAM_WRITE | nTMP_OUT);
+                        }
+
                         // --- MOV [DE], C ---
+                        if (opcode == 0x78) {
+                            // TMP = C
+                            addStep(nBC_OUT | nAL_OUT | TMP_WRITE | ALU_OP_A);
+                            
+                            // RAM[DE] = TMP
+                            addStep(nDE_OUT | nRAM_WRITE | nTMP_OUT);
+                        }
 
                         // --- MOV BC, [DE] ---
                         // --- MOV DE, [BC] ---
@@ -789,21 +909,41 @@ int main() {
                         }
 
                         // --- MOV B, A ---
+                        if (opcode == 0x83) {
+                            // B = A
+                            addStep(nACC_OUT | B_WRITE | ALU_OP_A);
+                        }
+
                         // --- MOV B, C ---
                         // --- MOV B, D ---
                         // --- MOV B, E ---
 
                         // --- MOV C, A ---
+                        if (opcode == 0x87) {
+                            // C = A
+                            addStep(nACC_OUT | C_WRITE | ALU_OP_A);
+                        }
+
                         // --- MOV C, B ---
                         // --- MOV C, D ---
                         // --- MOV C, E ---
 
                         // --- MOV D, A ---
+                        if (opcode == 0x8B) {
+                            // D = A
+                            addStep(nACC_OUT | D_WRITE | ALU_OP_A);
+                        }
+
                         // --- MOV D, B ---
                         // --- MOV D, C ---
                         // --- MOV D, E ---
 
                         // --- MOV E, A ---
+                        if (opcode == 0x8F) {
+                            // E = A
+                            addStep(nACC_OUT | E_WRITE | ALU_OP_A);
+                        }
+
                         // --- MOV E, B ---
                         // --- MOV E, C ---
                         // --- MOV E, D ---
@@ -852,29 +992,37 @@ int main() {
                             addStep(nACC_OUT | ACC_WRITE | (!sysCarry ? ALU_OP_A_PLUS_1 : ALU_OP_A));
                         }
 
-                        // // --- MOV BC, SP+i8 ---
-                        // if (opcode == 0x9A) {
-                        //     // TMP = SP_L
-                        //     addStep(nSP_OUT | nAL_OUT | TMP_WRITE | ALU_OP_A);
+                        // --- MOV BC, SP+i8 ---
+                        if (opcode == 0x9A) {
+                            // TMP = RAM[PC]
+                            addStep(nPC_OUT | nRAM_OUT | TMP_WRITE | ALU_OP_B);
 
-                        //     // C = TMP plus RAM[PC]
-                        //     addStep(nPC_OUT | nRAM_OUT | C_WRITE | nTMP_OUT | ALU_OP_A_PLUS_B | FLAGS_SYS_UPDATE);
+                            // C = SP_L plus TMP
+                            addStep(nSP_OUT | nAL_OUT| C_WRITE | nTMP_OUT | ALU_OP_A_PLUS_B | FLAGS_SYS_UPDATE);
                             
-                        //     // B = SP_H
-                        //     addStep(nSP_OUT | nAH_OUT | B_WRITE | (!sysCarry ? ALU_OP_A_PLUS_1 : ALU_OP_A));
-                        // }
+                            // B = SP_H
+                            addStep(nSP_OUT | nAH_OUT | B_WRITE | (!sysCarry ? ALU_OP_A_PLUS_1 : ALU_OP_A));
 
-                        // // --- MOV DE, SP+i8 ---
-                        // if (opcode == 0x9B) {
-                        //     // TMP = SP_L
-                        //     addStep(nSP_OUT | nAL_OUT | TMP_WRITE | ALU_OP_A);
+                            // PC++
+                            addStep(nPC_OUT | nAL_OUT | PC_L_WRITE | ALU_OP_A_PLUS_1 | FLAGS_SYS_UPDATE);
+                            addStep(nPC_OUT | nAH_OUT | PC_H_WRITE | (!sysCarry ? ALU_OP_A_PLUS_1 : ALU_OP_A));
+                        }
 
-                        //     // E = TMP plus RAM[PC]
-                        //     addStep(nPC_OUT | nRAM_OUT | E_WRITE | nTMP_OUT | ALU_OP_A_PLUS_B | FLAGS_SYS_UPDATE);
+                        // --- MOV DE, SP+i8 ---
+                        if (opcode == 0x9B) {
+                            // TMP = RAM[PC]
+                            addStep(nPC_OUT | nRAM_OUT | TMP_WRITE | ALU_OP_B);
+
+                            // E = SP_L plus TMP
+                            addStep(nSP_OUT | nAL_OUT| E_WRITE | nTMP_OUT | ALU_OP_A_PLUS_B | FLAGS_SYS_UPDATE);
                             
-                        //     // D = SP_H
-                        //     addStep(nSP_OUT | nAH_OUT | D_WRITE | (!sysCarry ? ALU_OP_A_PLUS_1 : ALU_OP_A));
-                        // }
+                            // D = SP_H
+                            addStep(nSP_OUT | nAH_OUT | D_WRITE | (!sysCarry ? ALU_OP_A_PLUS_1 : ALU_OP_A));
+
+                            // PC++
+                            addStep(nPC_OUT | nAL_OUT | PC_L_WRITE | ALU_OP_A_PLUS_1 | FLAGS_SYS_UPDATE);
+                            addStep(nPC_OUT | nAH_OUT | PC_H_WRITE | (!sysCarry ? ALU_OP_A_PLUS_1 : ALU_OP_A));
+                        }
 
                         // --- INC B ---
                         if (opcode == 0x9C) {
@@ -934,6 +1082,70 @@ int main() {
                         // -- MOV A, E ---
                         if (opcode == 0xA7) {
                             addStep(nDE_OUT | nAL_OUT | ACC_WRITE | ALU_OP_A);
+                        }
+
+                        // --- MOV BC, SP-i8 ---
+                        if (opcode == 0xA8) {
+                            // TMP = RAM[PC]
+                            addStep(nPC_OUT | nRAM_OUT | TMP_WRITE | ALU_OP_B);
+
+                            // C = SP_L minus TMP
+                            addStep(nSP_OUT | nAL_OUT| C_WRITE | nTMP_OUT | ALU_OP_A_MINUS_B | FLAGS_SYS_UPDATE);
+                            
+                            // B = SP_H
+                            addStep(nSP_OUT | nAH_OUT | B_WRITE | (sysCarry ? ALU_OP_A_MINUS_1 : ALU_OP_A));
+
+                            // PC++
+                            addStep(nPC_OUT | nAL_OUT | PC_L_WRITE | ALU_OP_A_PLUS_1 | FLAGS_SYS_UPDATE);
+                            addStep(nPC_OUT | nAH_OUT | PC_H_WRITE | (!sysCarry ? ALU_OP_A_PLUS_1 : ALU_OP_A));
+                        }
+
+                        // --- MOV DE, SP-i8 ---
+                        if (opcode == 0xA9) {
+                            // TMP = RAM[PC]
+                            addStep(nPC_OUT | nRAM_OUT | TMP_WRITE | ALU_OP_B);
+
+                            // E = SP_L minus TMP
+                            addStep(nSP_OUT | nAL_OUT| E_WRITE | nTMP_OUT | ALU_OP_A_MINUS_B | FLAGS_SYS_UPDATE);
+                            
+                            // D = SP_H
+                            addStep(nSP_OUT | nAH_OUT | D_WRITE | (sysCarry ? ALU_OP_A_MINUS_1 : ALU_OP_A));
+
+                            // PC++
+                            addStep(nPC_OUT | nAL_OUT | PC_L_WRITE | ALU_OP_A_PLUS_1 | FLAGS_SYS_UPDATE);
+                            addStep(nPC_OUT | nAH_OUT | PC_H_WRITE | (!sysCarry ? ALU_OP_A_PLUS_1 : ALU_OP_A));
+                        }
+
+                        // --- MOV SP, SP+i8 ---
+                        if (opcode == 0xAA) {
+                            // TMP = RAM[PC]
+                            addStep(nPC_OUT | nRAM_OUT | TMP_WRITE | ALU_OP_B);
+
+                            // SP_L = SP_L plus TMP
+                            addStep(nSP_OUT | nAL_OUT| SP_L_WRITE | nTMP_OUT | ALU_OP_A_PLUS_B | FLAGS_SYS_UPDATE);
+                            
+                            // SP_H = SP_H
+                            addStep(nSP_OUT | nAH_OUT | SP_H_WRITE | (!sysCarry ? ALU_OP_A_PLUS_1 : ALU_OP_A));
+
+                            // PC++
+                            addStep(nPC_OUT | nAL_OUT | PC_L_WRITE | ALU_OP_A_PLUS_1 | FLAGS_SYS_UPDATE);
+                            addStep(nPC_OUT | nAH_OUT | PC_H_WRITE | (!sysCarry ? ALU_OP_A_PLUS_1 : ALU_OP_A));
+                        }
+
+                        // --- MOV SP, SP-i8 ---
+                        if (opcode == 0xAB) {
+                            // TMP = RAM[PC]
+                            addStep(nPC_OUT | nRAM_OUT | TMP_WRITE | ALU_OP_B);
+
+                            // SP_L = SP_L minus TMP
+                            addStep(nSP_OUT | nAL_OUT| SP_L_WRITE | nTMP_OUT | ALU_OP_A_MINUS_B | FLAGS_SYS_UPDATE);
+                            
+                            // SP_H = SP_H
+                            addStep(nSP_OUT | nAH_OUT | SP_H_WRITE | (sysCarry ? ALU_OP_A_MINUS_1 : ALU_OP_A));
+
+                            // PC++
+                            addStep(nPC_OUT | nAL_OUT | PC_L_WRITE | ALU_OP_A_PLUS_1 | FLAGS_SYS_UPDATE);
+                            addStep(nPC_OUT | nAH_OUT | PC_H_WRITE | (!sysCarry ? ALU_OP_A_PLUS_1 : ALU_OP_A));
                         }
 
 
