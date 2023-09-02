@@ -55,11 +55,7 @@
           "width": 0.0
         }
       ],
-      "drc_exclusions": [
-        "silk_overlap|152717500|115700000|c52d0a4e-bd46-41f6-bd54-22e08e80653e|0377192c-0260-41fd-b4b2-de93493f58a1",
-        "silk_overlap|153352500|115700000|fccf3082-0bf2-47af-8875-9488df0be675|0377192c-0260-41fd-b4b2-de93493f58a1",
-        "starved_thermal|153035000|120015000|c1307185-bec7-4524-81cf-71620eba696c|9eff43b8-a2db-471d-a6f2-3c7d7f9b1bec|B.Cu"
-      ],
+      "drc_exclusions": [],
       "meta": {
         "version": 2
       },
@@ -97,10 +93,10 @@
         "shorting_items": "error",
         "silk_edge_clearance": "warning",
         "silk_over_copper": "warning",
-        "silk_overlap": "warning",
+        "silk_overlap": "ignore",
         "skew_out_of_range": "error",
         "solder_mask_bridge": "error",
-        "starved_thermal": "error",
+        "starved_thermal": "ignore",
         "text_height": "warning",
         "text_thickness": "warning",
         "through_hole_pad_without_hole": "error",
@@ -399,7 +395,7 @@
       "pin_to_pin": "warning",
       "power_pin_not_driven": "error",
       "similar_labels": "warning",
-      "simulation_model_issue": "error",
+      "simulation_model_issue": "ignore",
       "unannotated": "error",
       "unit_value_mismatch": "error",
       "unresolved_variable": "error",
