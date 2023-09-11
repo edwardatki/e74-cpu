@@ -215,6 +215,9 @@
 
     mov sp, sp+{i: i8} => 0xAA @ i
     mov sp, sp-{i: i8} => 0xAB @ i
+
+    tei => 0xAC
+    reti => 0xAD
 }
 
 ; cmp i8
