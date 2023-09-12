@@ -218,6 +218,12 @@
 
     tei => 0xAC
     reti => 0xAD
+
+    ldc => 0xAE
+    lde => 0xAF
+
+    pushf => 0xB0
+    popf => 0xB1
 }
 
 ; cmp i8

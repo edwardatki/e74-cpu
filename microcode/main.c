@@ -42,6 +42,7 @@
 
 #define ALU_OP_ZERO                 ALU_MODE | ALU_S1 | ALU_S0
 #define ALU_OP_ONE                  ALU_MODE | ALU_S3 | ALU_S2 // Broken in logisim???
+#define ALU_OP_FFFF                 ALU_CARRY | ALU_S1 | ALU_S0
 
 #define ALU_OP_A                    ALU_CARRY
 #define ALU_OP_B                    ALU_MODE | ALU_S3 | ALU_S1
@@ -143,7 +144,7 @@ int main() {
                             addStep(nPC_OUT | nRAM_OUT | PC_H_WRITE | ALU_OP_A_PLUS_1);
 
                             // Load literally anything else into IR
-                            addStep(nPC_OUT | nRAM_OUT | IR_WRITE);
+                            addStep(nPC_OUT | nRAM_OUT | IR_WRITE | END_INSTRUCTION);
                         } else {
                             // IR = RAM[PC++]
                             addStep(nPC_OUT | nRAM_OUT | IR_WRITE | nAL_OUT | PC_L_WRITE | ALU_OP_A_PLUS_1 | FLAGS_SYS_UPDATE);
@@ -886,10 +887,84 @@ int main() {
                             }
 
                             // --- MOV BC, [DE] ---
+                            if (opcode == 0x79) {
+                                // B = RAM[DE]
+                                addStep(nDE_OUT | nRAM_OUT | B_WRITE | ALU_OP_B);
+
+                                // DE++
+                                addStep(nDE_OUT | nAL_OUT | E_WRITE | ALU_OP_A_PLUS_1 | FLAGS_SYS_UPDATE);
+                                addStep(nDE_OUT | nAH_OUT | D_WRITE | (!sysCarry ? ALU_OP_A_PLUS_1 : ALU_OP_A));
+
+                                // C = RAM[DE]
+                                addStep(nDE_OUT | nRAM_OUT | C_WRITE | ALU_OP_B);
+
+                                // DE--
+                                addStep(nDE_OUT | nAL_OUT | E_WRITE | ALU_OP_A_MINUS_1 | FLAGS_SYS_UPDATE);
+                                addStep(nDE_OUT | nAH_OUT | D_WRITE | (sysCarry ? ALU_OP_A_MINUS_1 : ALU_OP_A) | END_INSTRUCTION);
+                            }
+
                             // --- MOV DE, [BC] ---
+                            if (opcode == 0x7A) {
+                                // D = RAM[BC]
+                                addStep(nBC_OUT | nRAM_OUT | D_WRITE | ALU_OP_B);
+
+                                // DE++
+                                addStep(nBC_OUT | nAL_OUT | C_WRITE | ALU_OP_A_PLUS_1 | FLAGS_SYS_UPDATE);
+                                addStep(nBC_OUT | nAH_OUT | B_WRITE | (!sysCarry ? ALU_OP_A_PLUS_1 : ALU_OP_A));
+
+                                // E = RAM[BC]
+                                addStep(nBC_OUT | nRAM_OUT | E_WRITE | ALU_OP_B);
+
+                                // DE--
+                                addStep(nBC_OUT | nAL_OUT | C_WRITE | ALU_OP_A_MINUS_1 | FLAGS_SYS_UPDATE);
+                                addStep(nBC_OUT | nAH_OUT | B_WRITE | (sysCarry ? ALU_OP_A_MINUS_1 : ALU_OP_A) | END_INSTRUCTION);
+                            }
                             
                             // --- MOV [BC], DE ---
+                            if (opcode == 0x7B) {
+                                // T = D
+                                addStep(nDE_OUT | nAH_OUT | T_WRITE | ALU_OP_A);
+
+                                // RAM[BC] = T
+                                addStep(nBC_OUT | nT_OUT | nRAM_WRITE);
+
+                                // BC++
+                                addStep(nBC_OUT | nAL_OUT | C_WRITE | ALU_OP_A_PLUS_1 | FLAGS_SYS_UPDATE);
+                                addStep(nBC_OUT | nAH_OUT | B_WRITE | (!sysCarry ? ALU_OP_A_PLUS_1 : ALU_OP_A));
+
+                                // T = E
+                                addStep(nDE_OUT | nAL_OUT | T_WRITE | ALU_OP_A);
+
+                                // RAM[BC] = T
+                                addStep(nBC_OUT | nT_OUT | nRAM_WRITE);
+
+                                // BC--
+                                addStep(nBC_OUT | nAL_OUT | C_WRITE | ALU_OP_A_MINUS_1 | FLAGS_SYS_UPDATE);
+                                addStep(nBC_OUT | nAH_OUT | B_WRITE | (sysCarry ? ALU_OP_A_MINUS_1 : ALU_OP_A) | END_INSTRUCTION);
+                            }
+
                             // --- MOV [DE], BC ---
+                            if (opcode == 0x7C) {
+                                // T = B
+                                addStep(nBC_OUT | nAH_OUT | T_WRITE | ALU_OP_A);
+
+                                // RAM[DE] = T
+                                addStep(nDE_OUT | nT_OUT | nRAM_WRITE);
+
+                                // DE++
+                                addStep(nDE_OUT | nAL_OUT | E_WRITE | ALU_OP_A_PLUS_1 | FLAGS_SYS_UPDATE);
+                                addStep(nDE_OUT | nAH_OUT | D_WRITE | (!sysCarry ? ALU_OP_A_PLUS_1 : ALU_OP_A));
+
+                                // T = C
+                                addStep(nBC_OUT | nAL_OUT | T_WRITE | ALU_OP_A);
+
+                                // RAM[DE] = T
+                                addStep(nDE_OUT | nT_OUT | nRAM_WRITE);
+
+                                // DE--
+                                addStep(nDE_OUT | nAL_OUT | E_WRITE | ALU_OP_A_MINUS_1 | FLAGS_SYS_UPDATE);
+                                addStep(nDE_OUT | nAH_OUT | D_WRITE | (sysCarry ? ALU_OP_A_MINUS_1 : ALU_OP_A) | END_INSTRUCTION);
+                            }
 
                             // --- CALL i16 ---
                             if (opcode == 0x7D) {
@@ -1216,6 +1291,84 @@ int main() {
                                 // SP++ and enable interrupts
                                 addStep(nSP_OUT | nAL_OUT | SP_L_WRITE | ALU_OP_A_PLUS_1 | FLAGS_SYS_UPDATE);
                                 addStep(nSP_OUT | nAH_OUT | SP_H_WRITE | IE_TOGGLE | (!sysCarry ? ALU_OP_A_PLUS_1 : ALU_OP_A) | END_INSTRUCTION);
+                            }
+
+                            // --- LDC ---
+                            if (opcode == 0xAE) {
+                                addStep(A_WRITE | (!usrCarry ? ALU_OP_A_PLUS_1 : ALU_OP_ZERO) | END_INSTRUCTION);
+                            }
+
+                            // --- LDE ---
+                            if (opcode == 0xAF) {
+                                addStep(A_WRITE | (usrEqual ? ALU_OP_A_PLUS_1 : ALU_OP_ZERO) | END_INSTRUCTION);
+                            }
+
+                            // --- PUSHF ---
+                            if (opcode == 0xB0) {
+                                // SP--
+                                addStep(nSP_OUT | nAL_OUT | SP_L_WRITE | ALU_OP_A_MINUS_1 | FLAGS_SYS_UPDATE);
+                                addStep(nSP_OUT | nAH_OUT | SP_H_WRITE | (sysCarry ? ALU_OP_A_MINUS_1 : ALU_OP_A));
+
+                                // T = Equal
+                                addStep(T_WRITE | (usrEqual ? ALU_OP_A_PLUS_1 : ALU_OP_ZERO));
+
+                                // RAM[SP] = T
+                                addStep(nSP_OUT | nT_OUT | nRAM_WRITE);
+
+                                // SP--
+                                addStep(nSP_OUT | nAL_OUT | SP_L_WRITE | ALU_OP_A_MINUS_1 | FLAGS_SYS_UPDATE);
+                                addStep(nSP_OUT | nAH_OUT | SP_H_WRITE | (sysCarry ? ALU_OP_A_MINUS_1 : ALU_OP_A));
+
+                                // T = Carry
+                                addStep(T_WRITE | (!usrCarry ? ALU_OP_A_PLUS_1 : ALU_OP_ZERO));
+
+                                // RAM[SP] = T
+                                addStep(nSP_OUT | nT_OUT | nRAM_WRITE | END_INSTRUCTION);
+                            }
+
+                            // --- POPF ---
+                            if (opcode == 0xB1) {
+                                // RAM[SP] - 1
+                                addStep(nSP_OUT | nRAM_OUT | ALU_OP_A_MINUS_B | FLAGS_USR_UPDATE);
+
+                                // SP++
+                                addStep(nSP_OUT | nAL_OUT | SP_L_WRITE | ALU_OP_A_PLUS_1 | FLAGS_SYS_UPDATE);
+                                addStep(nSP_OUT | nAH_OUT | SP_H_WRITE | (!sysCarry ? ALU_OP_A_PLUS_1 : ALU_OP_A));
+
+                                // RAM[SP] - 1
+                                addStep(nSP_OUT | nRAM_OUT | ALU_OP_A_MINUS_B | FLAGS_SYS_UPDATE);
+
+                                // RAM[SP] = A
+                                addStep(nSP_OUT | nA_OUT | nALU_OUT | nRAM_WRITE | ALU_OP_A);
+                                
+                                // A = 0xFF
+                                addStep(A_WRITE | ALU_OP_FFFF);
+
+                                if (sysCarry) {        // Equal
+                                    if (usrCarry) {    // Carry
+                                        // E C
+                                        addStep(nA_OUT | ALU_OP_A_MINUS_B | FLAGS_USR_UPDATE);
+                                    } else {            // No carry
+                                        // E -
+                                        addStep(ALU_OP_A_MINUS_1 | FLAGS_USR_UPDATE);
+                                    }
+                                } else {                // No equal
+                                    if (usrCarry) {    // Carry
+                                        // - C
+                                        addStep(nA_OUT | ALU_OP_A_PLUS_B_PLUS_1 | FLAGS_USR_UPDATE);
+                                    } else {            // No carry
+                                        // - -
+                                        addStep(ALU_OP_A | FLAGS_USR_UPDATE); // Always end up here ???
+                                    }
+                                }
+
+                                // A = RAM[SP]
+                                addStep(nSP_OUT | nRAM_OUT | A_WRITE | ALU_OP_B);
+
+
+                                // SP++
+                                addStep(nSP_OUT | nAL_OUT | SP_L_WRITE | ALU_OP_A_PLUS_1 | FLAGS_SYS_UPDATE);
+                                addStep(nSP_OUT | nAH_OUT | SP_H_WRITE | (!sysCarry ? ALU_OP_A_PLUS_1 : ALU_OP_A) | END_INSTRUCTION);
                             }
                         }
 
