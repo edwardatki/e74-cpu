@@ -1,4 +1,24 @@
-TERMINAL = 0x8000
+TERMINAL = 0x7FFF
+
+#bank ROM
+
+rand_u8:
+	push de
+	push bc
+	mov de, rand_seed
+	mov a, [de]
+	mov b, a
+	mov c, a
+	add c
+	mov c, a
+	add c
+	add b
+	add 7
+	mov [de], a
+	pop bc
+	pop de
+	ret
+
 
 ; A divide by B
 ; Result in C
@@ -108,14 +128,22 @@ print_u8_hex:
 print_string:
 	push a
 	push bc
+	push de
+	mov de, TERMINAL
 .loop:
 	mov a, [bc]
-	call put_char
-	cmp 0
-	je .exit
+	mov [de], a
 	inc bc
-	jmp .loop
+	cmp 0
+	jne .loop
 .exit:
+	pop de
 	pop bc
 	pop a
 	ret
+
+#bank RAM
+rand_seed:
+#res 1
+
+#bank ROM

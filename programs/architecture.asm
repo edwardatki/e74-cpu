@@ -234,13 +234,13 @@
 
 #bankdef ROM {
     #addr 0x0000
-    #size 0x4000
+    #size 0x8000
     #outp 0
 	#bits 8
 }
 
 #bankdef RAM {
-    #addr 0x4000
-    #size 0x4000
+    #addr 0x8000
+    #size 0x8000
 	#bits 8
 }

@@ -24,14 +24,21 @@ interrupt_handler:
         lde
         mov de, line_ready_flag
         mov [de], a
+        jne .skip_1
+        popf
+        pop de
+        pop bc
+        pop a
+        ret                             ; Use regular return so interrupts remain disabled
+.skip_1:
         
         inc bc                          ; Increment pointer
 
         mov a, c                        ; For now only testing low byte
         cmp input_buffer_end[7:0]       ; So buffer must be properly aligned
-        jne .skip
+        jne .skip_2
         mov bc, input_buffer_start      ; Wrap buffer back to start
-.skip:
+.skip_2:
         mov de, input_pointer
         mov [de], bc
 
@@ -41,30 +48,36 @@ interrupt_handler:
         pop a
         reti
 
+#addr 0xf4
+jmp fibonacci_demo
+#addr 0xf7
+jmp maze_demo
+#addr 0xfa
+jmp slow_primes_demo
+#addr 0xfd
+jmp fast_primes_demo
+
 #addr 0x0100
 
 reset:
-        
-        mov sp, 0x7fff                  ; Set up stack
+        mov sp, 0xffff                  ; Set up stack
 
         mov bc, welcome_message
         call print_string
 
+monitor:
         mov bc, input_buffer_start      ; Reset input buffer pointer
         mov de, input_pointer
         mov [de], bc
-
 .put_prompt:
         mov a, ">"
         call put_char
         tei                             ; Enable interrupts
 .wait_for_line:
         mov de, line_ready_flag         ; Check if line is ready
-        mov a, [de]
+        mov a, [de]                     ; Could go do other things while we wait
         cmp 0
-        je .wait_for_line
-
-        tei                             ; Disable interrupts
+        je .wait_for_line               ; Interrupts will already be disabled by the handler if EOL
 
         mov a, 0                        ; Reset line ready flag
         mov de, line_ready_flag
@@ -73,13 +86,19 @@ reset:
         mov de, input_buffer_start
         mov a, [de]                     ; First character determines command
 
-        cmp "r"                         ; If read command
+        cmp "H"                         ; Help command
+        je .help_command
+
+        cmp "R"                         ; Read command
         je .read_command
 
-        cmp "w"                         ; If write command
+        cmp "W"                         ; Write command
         je .write_command
 
-        cmp "x"                         ; If execute command
+        cmp "D"                         ; Dump command
+        je .dump_command
+
+        cmp "X"                         ; Execute command
         je .execute_command
 
         cmp "?"                         ; Return code command
@@ -115,12 +134,11 @@ reset:
 
         sub 0x07                        ; A-F
 .skip:
-
-        mov c, a                        ; Current digit in c
-        mov a, b                        ; Test if already a digit in b
+        mov c, a                        ; Current digit in C
+        mov a, b                        ; Test if already a digit in B
         cmp 0x80
         jne .low_byte                   ; If have both digits the done
-        mov b, c                        ; Otherwise this is the high digit, put in b
+        mov b, c                        ; Otherwise this is the high digit, put in B
         jmp .next_char                  ; Continue to get low digit
 .low_byte:
         mov a, b                        ; Combine high and low digits
@@ -132,6 +150,11 @@ reset:
 
         pop bc
         ret
+
+.help_command:
+        mov bc, help_message
+        call print_string
+        jmp .end_of_line
 
 .read_command:
         inc de                          ; Parse address high
@@ -188,6 +211,41 @@ reset:
         
         jmp .end_of_line
 
+.dump_command:
+        inc de                          ; Parse address high
+        call .parse_hex_byte
+        mov b, a
+
+        inc de                          ; Parse address low
+        call .parse_hex_byte
+        mov c, a
+
+        mov a, b                        ; Print address if parsed correctly
+        call print_u8_hex
+        mov a, c
+        call print_u8_hex
+
+        mov a, ":"
+        call put_char
+
+        push de
+        mov e, 15
+.dump_loop:
+        mov a, [bc]
+        call print_u8_hex
+        mov a, " "
+        call put_char
+        inc bc
+        dec e
+        jc .dump_loop
+
+        mov a, "\n"
+        call put_char
+
+        pop de
+      
+        jmp .end_of_line
+
 .execute_command:
         inc de                          ; Parse address high
         call .parse_hex_byte
@@ -219,18 +277,115 @@ reset:
 
         mov bc, input_buffer_start      ; Set pointer back to start of buffer
         mov de, input_pointer
-        mov [de], bc                    ; Enable interrupts
+        mov [de], bc
 
         jmp .put_prompt
 
-#include "print_functions.asm"
+#include "utility_functions.asm"
 
 welcome_message:
-#d "--- E74 Minicomputer ---\n\0"
+#d "--- E74 MINICOMPUTER ---\n"
+#d " By Ed Atkinson 2023\n"
+#d " Type 'H' for help\n\n\0"
+
+help_message:
+#d "Commands:\n"
+#d " R aaaa      read data from address\n"
+#d " W aaaa dd   write data to address\n"
+#d " D aaaa      dump memory at address\n"
+#d " X aaaa      call address\n"
+#d " ?           print return code\n"
+#d "Built-in programs:\n"
+#d " Fibonacci    @ 00F4\n"
+#d " Maze         @ 00F7\n"
+#d " Slow primes  @ 00FA\n"
+#d " Fast primes  @ 00FD\n\0"
+
+not_implemented_message:
+#d "Not yet implemented...\n\0"
+
 error_message:
-#d "ERROR!\n\0"
+#d "Error!\n\0"
+
+fibonacci_demo:
+	mov a, 1
+	mov b, 1
+.loop:
+	call print_u8_dec
+	push a
+	mov a, "\n"
+	call put_char
+	pop a
+
+	add b
+	push a
+	mov a, b
+	pop b
+
+	jnc .loop
+
+        mov a, 0
+	ret
+
+maze_demo:
+.loop:
+        call rand_u8
+        mov b, "\\"
+        cmp 0x80
+        jc .skip
+        mov b, "/"
+.skip:
+        mov a, b
+        call put_char
+        jmp .loop
+	ret
+
+slow_primes_demo:
+        mov a, 2
+        mov b, 2
+.loop:
+        mov c, a
+.div_loop:                              ; A = A % B
+        cmp b
+        je .div_skip                    ; If A < B .div_skip else .div_exit
+        jnc .div_exit
+.div_skip:
+        sub b
+        jmp .div_loop
+.div_exit:
+        cmp 0                           ; If no remainder then not prime
+        mov a, c
+        jne .skip                       ; Skip if not prime
+        add 1                           ; Increment number under test
+        jc .exit                        ; If hit max value then exit
+        mov b, 2                        ; Reset divisor
+.skip:
+        inc b
+        cmp b                           ; If A > B then not done testing this number
+        jc .loop
+        mov b, 2
+        call print_u8_dec
+        push a
+        mov a, "\n"
+        call put_char
+        pop a
+        add 1
+        jmp .loop
+.exit:
+        ret
+
+fast_primes_demo:
+        mov bc, not_implemented_message
+        call print_string
+        ret
+
 
 #bank RAM
+
+line_ready_flag:
+#res 1
+return_code:
+#res 1
 
 #align 0x100 * 8
 input_pointer:
@@ -238,9 +393,3 @@ input_pointer:
 input_buffer_start:
 #res 32
 input_buffer_end:
-
-line_ready_flag:
-#res 1
-
-return_code:
-#res 1
