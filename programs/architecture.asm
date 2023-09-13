@@ -1,5 +1,5 @@
 #ruledef {
-	nop => 0x00
+	nop => 0xff
 
 	mov a, {i: i8} => 0x01 @ i
 	mov b, {i: i8} => 0x02 @ i
@@ -232,10 +232,15 @@
 ; jc i16    ; a > i8
 ; jnc i16   ; a <= i8
 
-#bankdef RAM
-{
+#bankdef ROM {
     #addr 0x0000
-    #size 0x8000
+    #size 0x4000
     #outp 0
+	#bits 8
+}
+
+#bankdef RAM {
+    #addr 0x4000
+    #size 0x4000
 	#bits 8
 }
