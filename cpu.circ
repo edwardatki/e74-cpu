@@ -851,7 +851,7 @@
       <a name="facing" val="south"/>
       <a name="incoming" val="8"/>
     </comp>
-    <comp lib="0" loc="(550,1030)" name="Tunnel">
+    <comp lib="0" loc="(550,1020)" name="Tunnel">
       <a name="facing" val="east"/>
       <a name="label" val="RST"/>
       <a name="labelfont" val="SansSerif bold 10"/>
@@ -885,7 +885,7 @@
       <a name="spacing" val="2"/>
     </comp>
     <comp lib="0" loc="(610,1260)" name="Constant">
-      <a name="value" val="0x1d7"/>
+      <a name="value" val="0x4ce"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(660,340)" name="Tunnel">
@@ -5611,7 +5611,7 @@ a401087b 40401fb 14*c0500ff a401087b 40401fb 14*c0500ff a401087b 40401fb
     <wire from="(540,1120)" to="(580,1120)"/>
     <wire from="(540,720)" to="(1040,720)"/>
     <wire from="(540,720)" to="(540,950)"/>
-    <wire from="(550,1030)" to="(590,1030)"/>
+    <wire from="(550,1020)" to="(590,1020)"/>
     <wire from="(550,990)" to="(570,990)"/>
     <wire from="(560,1070)" to="(570,1070)"/>
     <wire from="(560,970)" to="(560,980)"/>
@@ -5625,7 +5625,7 @@ a401087b 40401fb 14*c0500ff a401087b 40401fb 14*c0500ff a401087b 40401fb
     <wire from="(580,1010)" to="(670,1010)"/>
     <wire from="(580,390)" to="(580,430)"/>
     <wire from="(580,430)" to="(760,430)"/>
-    <wire from="(590,1000)" to="(590,1030)"/>
+    <wire from="(590,1000)" to="(590,1020)"/>
     <wire from="(600,360)" to="(690,360)"/>
     <wire from="(600,380)" to="(690,380)"/>
     <wire from="(610,1260)" to="(620,1260)"/>

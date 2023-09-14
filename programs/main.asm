@@ -65,6 +65,14 @@ reset:
         mov bc, welcome_message
         call print_string
 
+; mem_clear:                               ; Clear memory 0x8000 to 0x7FFF
+;         mov bc, 0x8000
+;         mov a, 0
+; .loop:
+;         mov [bc], a
+;         inc bc
+;         jnc .loop
+
 monitor:
         mov bc, input_buffer_start      ; Reset input buffer pointer
         mov de, input_pointer
@@ -282,6 +290,7 @@ monitor:
         jmp .put_prompt
 
 #include "utility_functions.asm"
+#bank ROM
 
 welcome_message:
 #d "--- E74 MINICOMPUTER ---\n"
@@ -375,10 +384,49 @@ slow_primes_demo:
         ret
 
 fast_primes_demo:
-        mov bc, not_implemented_message
-        call print_string
-        ret
+        mov bc, prime_sieve
+.clear_loop:                            ; Set sieve as all prime
+        mov a, 1
+        mov [bc], a
+        inc c
+        jnc .clear_loop
 
+        mov b, prime_sieve[15:8]
+        mov d, prime_sieve[15:8]
+        mov c, 2                        ; Number under test in C
+.test_loop:
+        mov a, [bc]                     ; Check sieve to see if prime
+        cmp 0
+        je .skip                        ; If not prime then skip
+        mov e, c
+.multiples_loop:
+        mov a, e                        ; Mark all multiples as not prime
+        add c                           ; Can speed up by starting at C*C instead of C
+        jc .skip
+        mov e, a
+        mov a, 0
+        mov [de], a
+        jmp .multiples_loop
+.skip:
+        inc c
+        mov a, c
+        cmp 16                          ; Only need to test up to square root of max value
+        jnc .test_loop
+
+        mov bc, prime_sieve+2
+.print_loop:
+        mov a, [bc]
+        cmp 0
+        je .print_skip
+        mov a, c
+        call print_u8_dec
+        mov a, "\n"
+        call put_char
+.print_skip:
+        inc c
+        jnc .print_loop
+
+        ret
 
 #bank RAM
 
@@ -393,3 +441,7 @@ input_pointer:
 input_buffer_start:
 #res 32
 input_buffer_end:
+
+#align 0x100 * 8
+prime_sieve:
+#res 0x100

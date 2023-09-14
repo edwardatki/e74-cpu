@@ -19,7 +19,6 @@ rand_u8:
 	pop de
 	ret
 
-
 ; A divide by B
 ; Result in C
 ; Remainder in A
@@ -145,5 +144,3 @@ print_string:
 #bank RAM
 rand_seed:
 #res 1
-
-#bank ROM
