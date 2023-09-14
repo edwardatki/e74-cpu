@@ -1,9 +1,16 @@
-.DEFAULT_GOAL := all
+.DEFAULT_GOAL := default
 
-all: programs microcode
+default: programs microcode
+all: programs microcode emulator
 
-programs: ./programs/*
+programs: $(wildcard ./programs/*.asm)
 	make -C ./programs
 
-microcode: ./microcode/*
+microcode: $(wildcard ./microcode/*.c ./microcode/*.h)
 	make -C ./microcode
+
+emulator: $(wildcard ./emulator/*.c ./emulator/*.h)
+	make -C ./emulator
+
+run: programs microcode
+	make -C ./emulator run

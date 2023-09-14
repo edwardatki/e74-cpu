@@ -68,7 +68,8 @@
 
 #define NOP_STEP nPC_OUT | nSP_OUT | nBC_OUT | nDE_OUT | nALU_OUT | nAL_OUT | nAH_OUT | nRAM_OUT | nRAM_WRITE | nA_OUT | nT_OUT
 
-FILE *outputFile;
+FILE *logisimFile;
+FILE *binaryFile;
 
 int opcodeStepCount = 0;
 
@@ -76,14 +77,16 @@ void addStep(uint32_t stepMask) {
     static int count = 0;
     
     uint32_t controlWord = ((uint32_t)NOP_STEP) ^ stepMask;
-    fprintf(outputFile, "%08x", controlWord); 
+    fprintf(logisimFile, "%08x", controlWord); 
     
     count += 1;
     if (count >= 8) {
-        fprintf(outputFile, "\n");
+        fprintf(logisimFile, "\n");
         count = 0;
     }
-    else fprintf(outputFile, " ");
+    else fprintf(logisimFile, " ");
+
+    fwrite(&controlWord, sizeof(controlWord), 1, binaryFile);
 
     opcodeStepCount += 1;
 }
@@ -96,8 +99,10 @@ void finishOpcode() {
 }
 
 int main() {
-    outputFile = fopen("microcode.lbi", "w");
-    fprintf(outputFile, "v3.0 hex words plain\n");
+    logisimFile = fopen("microcode.lbi", "w");
+    fprintf(logisimFile, "v3.0 hex words plain\n");
+
+    binaryFile = fopen("microcode.bin", "wb");
 
     for (int opcode = 0; opcode <= 0xff; opcode++) {
         for (int interrupt = 0; interrupt <= 1; interrupt++) {
@@ -1514,7 +1519,7 @@ int main() {
         }
     }
 
-    fclose(outputFile);
+    fclose(logisimFile);
 
     return 0;
 }

@@ -5,4 +5,5 @@ clean:
 
 %.lbi: %.asm
 	customasm $< -o $@ -f logisim8
+	customasm $< -f binary
 	customasm $< -f annotated
