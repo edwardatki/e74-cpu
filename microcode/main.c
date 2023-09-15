@@ -1168,7 +1168,7 @@ int main() {
 
                             // --- MOV C, E ---
                             if (opcode == 0x8A) {
-                                addStep(nDE_OUT | nAH_OUT | C_WRITE | ALU_OP_A | END_INSTRUCTION);
+                                addStep(nDE_OUT | nAL_OUT | C_WRITE | ALU_OP_A | END_INSTRUCTION);
                             }
 
                             // --- MOV D, A ---

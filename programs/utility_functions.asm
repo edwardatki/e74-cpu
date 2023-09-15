@@ -2,6 +2,7 @@ TERMINAL = 0x7FFF
 
 #bank ROM
 
+; Returns a random u8 in A
 rand_u8:
 	push de
 	push bc
@@ -18,6 +19,38 @@ rand_u8:
 	pop bc
 	pop de
 	ret
+
+; Add DE to BC, result in BC
+add_u16:
+        push a
+        mov a, c
+        add e
+        mov c, a
+
+        mov a, b
+        jnc .skip
+        add 1
+.skip:
+        add d
+        mov b, a
+        pop a
+        ret
+
+; A multiply by B
+; Result in A
+multiply_u8:
+        push bc
+
+        dec b
+        dec b
+        mov c, a
+.loop:
+        add c
+        dec b
+        jc .loop
+
+        pop bc
+        ret
 
 ; A divide by B
 ; Result in C
@@ -87,6 +120,38 @@ print_u8_dec:
 	pop a
 
 .skip3:
+	; --x
+	add "0"
+	call put_char
+
+	pop bc
+	pop a
+	ret
+
+; Print A in decimal with leading zeroes
+print_u8_dec_with_leading:
+	push a
+	push bc
+	mov b, 100
+	call divide_u8
+	
+	; x--
+	push a
+	mov a, c
+	add "0"
+	call put_char
+	pop a
+
+	mov b, 10
+	call divide_u8
+
+	; -x-
+	push a
+	mov a, c
+	add "0"
+	call put_char
+	pop a
+
 	; --x
 	add "0"
 	call put_char
