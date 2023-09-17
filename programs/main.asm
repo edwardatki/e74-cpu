@@ -67,7 +67,15 @@ reset:
         mov sp, 0xffff                  ; Set up stack
 
         mov bc, welcome_message
-        call print_string
+        mov de, TERMINAL
+.loop:
+        mov a, [bc]
+        mov [de], a
+        inc bc
+        cmp 0
+        jne .loop
+
+        ; call print_string
 ; call game_of_life
 monitor:
         mov bc, input_buffer_start      ; Reset input buffer pointer
