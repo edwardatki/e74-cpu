@@ -69,14 +69,14 @@ reset:
         mov bc, welcome_message
         mov de, TERMINAL
 .loop:
-        mov a, [bc]
+        mov a, [bc]                     ; Print string without functions call so we hopefully still get some indication of life even if something is busted
         mov [de], a
         inc bc
         cmp 0
         jne .loop
 
         ; call print_string
-; call game_of_life
+
 monitor:
         mov bc, input_buffer_start      ; Reset input buffer pointer
         mov de, input_pointer
@@ -109,6 +109,9 @@ monitor:
 
         cmp "D"                         ; Dump command
         je .dump_command
+
+        cmp "U"                         ; Disassemble command
+        je .disassemble_command
 
         cmp "X"                         ; Execute command
         je .execute_command
@@ -258,6 +261,94 @@ monitor:
       
         jmp .end_of_line
 
+.disassemble_command:
+        inc de                          ; Parse start address high
+        call .parse_hex_byte
+        mov b, a
+
+        inc de                          ; Parse start address low
+        call .parse_hex_byte
+        mov c, a
+
+        push bc
+
+        inc de                          ; Parse end address high
+        call .parse_hex_byte
+        mov b, a
+
+        inc de                          ; Parse end address low
+        call .parse_hex_byte
+        mov c, a
+
+        mov de, bc                      ; End address in DE
+        pop bc                          ; Start address in BC
+
+        push de
+.next_opcode:
+        pop de
+        mov a, d
+        cmp b
+        jc .low_check_skip              ; If end address high > current address high
+        mov a, e
+        cmp c
+        jnc .exit                        ; If end address low <= current address low
+.low_check_skip:
+        push de
+
+        mov a, b                        ; Print address if parsed correctly
+        call print_u8_hex
+        mov a, c
+        call print_u8_hex
+
+        mov a, ":"
+        call put_char
+        mov a, " "
+        call put_char
+
+        mov de, disassembly_table
+        mov a, e
+        mov e, [bc]                     ; Get opcode
+        add e                           ; Add opcode times 2 to get table entry address
+        jnc .no_inc_1
+        inc d
+.no_inc_1:
+        add e
+        jnc .no_inc_2
+        inc d
+.no_inc_2:
+        mov e, a
+
+        push bc
+        mov bc, [de]
+        mov de, bc
+        pop bc
+
+        inc bc
+.print_loop:
+        mov a, [de]                     ; Print string, if '@' then print hex opperand
+
+        cmp 0                           ; If zero then break
+        je .next_opcode
+
+        cmp "@"
+        je .print_opperand
+
+        call put_char
+
+        inc de
+        jmp .print_loop
+
+.print_opperand:
+        mov a, [bc]
+        call print_u8_hex
+        inc bc
+
+        inc de
+        jmp .print_loop
+
+.exit:
+        jmp .end_of_line
+
 .execute_command:
         inc de                          ; Parse address high
         call .parse_hex_byte
@@ -303,11 +394,12 @@ welcome_message:
 
 help_message:
 #d "Commands:\n"
-#d " R aaaa      read data from address\n"
-#d " W aaaa dd   write data to address\n"
-#d " D aaaa      dump memory at address\n"
-#d " X aaaa      call address\n"
-#d " ?           print return code\n"
+#d " R aaaa        read data from address\n"
+#d " W aaaa dd     write data to address\n"
+#d " D aaaa        dump memory at address\n"
+#d " U aaaa aaaa   disassemble memory in range\n"
+#d " X aaaa        call address\n"
+#d " ?             print return code\n"
 #d "Built-in programs:\n"
 #d " Fibonacci    @ 00EE\n"
 #d " Maze         @ 00F1\n"
@@ -321,6 +413,8 @@ not_implemented_message:
 
 error_message:
 #d "Error!\n\0"
+
+#include "disassembly_table.asm"
 
 fibonacci_demo:
 	mov a, 1
