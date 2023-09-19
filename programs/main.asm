@@ -13,18 +13,17 @@ interrupt_handler:
 
         mov de, TERMINAL                ; Get character
         mov a, [de]
-        
-        call put_char                   ; Echo character
+        mov [de], a
         
         mov de, input_pointer           ; Store character in buffer
         mov bc, [de]
         mov [bc], a
 
         cmp "\n"                        ; Test for newline and set flag
-        lde
-        mov de, line_ready_flag
-        mov [de], a
         jne .skip_1
+        mov de, line_ready_flag
+        mov a, 1
+        mov [de], a
         popf
         pop de
         pop bc
@@ -81,6 +80,14 @@ monitor:
         mov bc, input_buffer_start      ; Reset input buffer pointer
         mov de, input_pointer
         mov [de], bc
+        jmp .put_prompt
+.skip_whitespace:
+        inc de
+        mov a, [de]
+        cmp " "
+        je .skip_whitespace
+        dec de
+        ret
 .put_prompt:
         mov a, ">"
         call put_char
@@ -97,6 +104,12 @@ monitor:
 
         mov de, input_buffer_start
         mov a, [de]                     ; First character determines command
+
+        cmp 0x60                        ; Shift character to uppercase if needed
+        jnc ..upper_case
+..lower_case:
+        sub "a"-"A"
+..upper_case:
 
         cmp "H"                         ; Help command
         je .help_command
@@ -125,37 +138,43 @@ monitor:
         push bc
         mov b, 0x80
         dec de
-.next_char:
+..next_char:
         inc de                          ; Skip characters until valid hex char
         mov a, [de]
 
         cmp "\n"                        ; If eol then exit
-        jne .not_eol
+        jne ..not_eol
         mov sp, sp+4                    ; Remove return address and bc from stack
         jmp .error
-.not_eol:
+..not_eol:
+        cmp 0x60                        ; Shift character to uppercase if needed
+        jnc ..upper_case
+..lower_case:
+        sub "a"-"A"
+..upper_case:
+
         cmp 0x2F                        ; If not between 0 and F
-        jnc .next_char
+        jnc .error
         cmp 0x46
-        jc .next_char
+        jc .error
 
         sub 0x30
 
         cmp 0x09                        ; If 0-9
-        jnc .skip
+        jnc ..skip
 
         cmp 0x10                        ; If beween 9 and A
-        jnc .next_char
+        jnc .error
 
         sub 0x07                        ; A-F
-.skip:
+..skip:
         mov c, a                        ; Current digit in C
         mov a, b                        ; Test if already a digit in B
         cmp 0x80
-        jne .low_byte                   ; If have both digits the done
+        jne ..low_byte                   ; If have both digits the done
         mov b, c                        ; Otherwise this is the high digit, put in B
-        jmp .next_char                  ; Continue to get low digit
-.low_byte:
+        jmp ..next_char                  ; Continue to get low digit
+..low_byte:
         mov a, b                        ; Combine high and low digits
         rol
         rol
@@ -172,6 +191,8 @@ monitor:
         jmp .end_of_line
 
 .read_command:
+        call .skip_whitespace
+
         inc de                          ; Parse address high
         call .parse_hex_byte
         mov b, a
@@ -197,6 +218,8 @@ monitor:
         jmp .end_of_line
 
 .write_command:
+        call .skip_whitespace
+
         inc de                          ; Parse address high
         call .parse_hex_byte
         mov b, a
@@ -209,6 +232,8 @@ monitor:
         call print_u8_hex
         mov a, c
         call print_u8_hex
+
+        call .skip_whitespace
 
         inc de                          ; Parse data to write
         call .parse_hex_byte
@@ -227,6 +252,8 @@ monitor:
         jmp .end_of_line
 
 .dump_command:
+        call .skip_whitespace
+
         inc de                          ; Parse address high
         call .parse_hex_byte
         mov b, a
@@ -245,14 +272,14 @@ monitor:
 
         push de
         mov e, 15
-.dump_loop:
+..loop:
         mov a, [bc]
         call print_u8_hex
         mov a, " "
         call put_char
         inc bc
         dec e
-        jc .dump_loop
+        jc ..loop
 
         mov a, "\n"
         call put_char
@@ -262,6 +289,8 @@ monitor:
         jmp .end_of_line
 
 .disassemble_command:
+        call .skip_whitespace
+
         inc de                          ; Parse start address high
         call .parse_hex_byte
         mov b, a
@@ -272,6 +301,11 @@ monitor:
 
         push bc
 
+        inc de                          ; If . then end address to come
+        mov a, [de]
+        cmp "."
+        jne ..no_end_address
+
         inc de                          ; Parse end address high
         call .parse_hex_byte
         mov b, a
@@ -280,19 +314,37 @@ monitor:
         call .parse_hex_byte
         mov c, a
 
+        call .skip_whitespace           ; If not end of line then error
+        inc de
+        mov a, [de]
+        cmp "\n"
+        jne .error
+
         mov de, bc                      ; End address in DE
         pop bc                          ; Start address in BC
 
+        jmp ..got_end_address
+
+..no_end_address:
+        call .skip_whitespace           ; If not end of line then error
+        inc de
+        mov a, [de]
+        cmp "\n"
+        jne .error
+
+        mov de, bc                      ; If no end address given then use start address plus 1
+        inc de
+..got_end_address:
         push de
-.next_opcode:
+..next_opcode:
         pop de
         mov a, d
         cmp b
-        jc .low_check_skip              ; If end address high > current address high
+        jc ..low_check_skip              ; If end address high > current address high
         mov a, e
         cmp c
-        jnc .exit                        ; If end address low <= current address low
-.low_check_skip:
+        jnc ..exit                        ; If end address low <= current address low
+..low_check_skip:
         push de
 
         mov a, b                        ; Print address if parsed correctly
@@ -309,13 +361,13 @@ monitor:
         mov a, e
         mov e, [bc]                     ; Get opcode
         add e                           ; Add opcode times 2 to get table entry address
-        jnc .no_inc_1
+        jnc ..no_inc_1
         inc d
-.no_inc_1:
+..no_inc_1:
         add e
-        jnc .no_inc_2
+        jnc ..no_inc_2
         inc d
-.no_inc_2:
+..no_inc_2:
         mov e, a
 
         push bc
@@ -324,32 +376,34 @@ monitor:
         pop bc
 
         inc bc
-.print_loop:
+..print_loop:
         mov a, [de]                     ; Print string, if '@' then print hex opperand
 
         cmp 0                           ; If zero then break
-        je .next_opcode
+        je ..next_opcode
 
         cmp "@"
-        je .print_opperand
+        je ..print_opperand
 
         call put_char
 
         inc de
-        jmp .print_loop
+        jmp ..print_loop
 
-.print_opperand:
+..print_opperand:
         mov a, [bc]
         call print_u8_hex
         inc bc
 
         inc de
-        jmp .print_loop
+        jmp ..print_loop
 
-.exit:
+..exit:
         jmp .end_of_line
 
 .execute_command:
+        call .skip_whitespace
+
         inc de                          ; Parse address high
         call .parse_hex_byte
         mov b, a
@@ -397,7 +451,7 @@ help_message:
 #d " R aaaa        read data from address\n"
 #d " W aaaa dd     write data to address\n"
 #d " D aaaa        dump memory at address\n"
-#d " U aaaa aaaa   disassemble memory in range\n"
+#d " U aaaa.aaaa   disassemble memory in range\n"
 #d " X aaaa        call address\n"
 #d " ?             print return code\n"
 #d "Built-in programs:\n"
