@@ -27,6 +27,7 @@ bool valid_address() {
   if (digitalRead(a14_pin) != true) return false;
   if (digitalRead(a13_pin) != true) return false;
   if (digitalRead(a12_pin) != true) return false;
+
   return true;
 }
 
@@ -75,6 +76,9 @@ void write_data(char data) {
 }
 
 void setup() {
+  pinMode(a0_pin, INPUT);
+  pinMode(a1_pin, INPUT);
+
   pinMode(a12_pin, INPUT);
   pinMode(a13_pin, INPUT);
   pinMode(a14_pin, INPUT);
@@ -95,8 +99,8 @@ void setup() {
   digitalWrite(mem_inhibit_pin, true);
   pinMode(mem_inhibit_pin, OUTPUT);
 
-  digitalWrite(interrupt_pin, false);
   pinMode(interrupt_pin, OUTPUT);
+  digitalWrite(interrupt_pin, false);
 
   Serial.begin(115200);
   Serial.println("UART READY...");
@@ -108,6 +112,27 @@ void loop() {
 
   bool write_low = !digitalRead(mem_write_pin);
   static bool was_write_low = false;
+
+  // Serial.print(digitalRead(a15_pin));
+  // Serial.print(" ");
+  // Serial.print(digitalRead(a14_pin));
+  // Serial.print(" ");
+  // Serial.print(digitalRead(a13_pin));
+  // Serial.print(" ");
+  // Serial.print(digitalRead(a12_pin));
+  // Serial.print(" ");
+  // Serial.print(" ... ");
+  // Serial.print(digitalRead(a1_pin));
+  // Serial.print(" ");
+  // Serial.print(digitalRead(a0_pin));
+  // Serial.print(" : ");
+  // Serial.print(read_data());
+  // Serial.print(", ");
+  // Serial.print(valid_address());
+  // Serial.print(" ");
+  // Serial.print(read_low);
+  // Serial.print(" ");
+  // Serial.println(write_low);
 
   if (valid_address()) {
     digitalWrite(mem_inhibit_pin, false);
@@ -126,14 +151,14 @@ void loop() {
       read_data();
     }
 
-    was_read_low = read_low;
-    was_write_low = write_low;
   } else {
     digitalWrite(mem_inhibit_pin, true);
 
     read_data();
-
-    was_read_low = false;
-    was_write_low = false;
   }
+
+  digitalWrite(interrupt_pin, Serial.available() > 0);
+
+  was_read_low = read_low;
+  was_write_low = write_low;
 }

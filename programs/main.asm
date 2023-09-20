@@ -82,8 +82,8 @@ monitor:
         mov [de], bc
         jmp .put_prompt
 .skip_whitespace:
-        inc de
         mov a, [de]
+        inc de
         cmp " "
         je .skip_whitespace
         dec de
@@ -110,6 +110,7 @@ monitor:
 ..lower_case:
         sub "a"-"A"
 ..upper_case:
+        inc de
 
         cmp "H"                         ; Help command
         je .help_command
@@ -137,10 +138,9 @@ monitor:
 .parse_hex_byte:
         push bc
         mov b, 0x80
-        dec de
 ..next_char:
-        inc de                          ; Skip characters until valid hex char
         mov a, [de]
+        inc de
 
         cmp "\n"                        ; If eol then exit
         jne ..not_eol
@@ -171,9 +171,9 @@ monitor:
         mov c, a                        ; Current digit in C
         mov a, b                        ; Test if already a digit in B
         cmp 0x80
-        jne ..low_byte                   ; If have both digits the done
+        jne ..low_byte                  ; If have both digits the done
         mov b, c                        ; Otherwise this is the high digit, put in B
-        jmp ..next_char                  ; Continue to get low digit
+        jmp ..next_char                 ; Continue to get low digit
 ..low_byte:
         mov a, b                        ; Combine high and low digits
         rol
@@ -192,13 +192,11 @@ monitor:
 
 .read_command:
         call .skip_whitespace
-
-        inc de                          ; Parse address high
-        call .parse_hex_byte
+        
+        call .parse_hex_byte            ; Parse address high
         mov b, a
-
-        inc de                          ; Parse address low
-        call .parse_hex_byte
+        
+        call .parse_hex_byte            ; Parse address low
         mov c, a
 
         mov a, b                        ; Print address if parsed correctly
@@ -219,13 +217,11 @@ monitor:
 
 .write_command:
         call .skip_whitespace
-
-        inc de                          ; Parse address high
-        call .parse_hex_byte
+  
+        call .parse_hex_byte            ; Parse address high
         mov b, a
-
-        inc de                          ; Parse address low
-        call .parse_hex_byte
+         
+        call .parse_hex_byte            ; Parse address low
         mov c, a
 
         mov a, b                        ; Print address if parsed correctly
@@ -234,9 +230,8 @@ monitor:
         call print_u8_hex
 
         call .skip_whitespace
-
-        inc de                          ; Parse data to write
-        call .parse_hex_byte
+             
+        call .parse_hex_byte            ; Parse data to write
 
         mov [bc], a                     ; Write data to address
         
@@ -253,13 +248,11 @@ monitor:
 
 .dump_command:
         call .skip_whitespace
-
-        inc de                          ; Parse address high
-        call .parse_hex_byte
+          
+        call .parse_hex_byte            ; Parse address high
         mov b, a
 
-        inc de                          ; Parse address low
-        call .parse_hex_byte
+        call .parse_hex_byte            ; Parse address low
         mov c, a
 
         mov a, b                        ; Print address if parsed correctly
@@ -290,32 +283,27 @@ monitor:
 
 .disassemble_command:
         call .skip_whitespace
-
-        inc de                          ; Parse start address high
-        call .parse_hex_byte
+          
+        call .parse_hex_byte            ; Parse start address high
         mov b, a
 
-        inc de                          ; Parse start address low
-        call .parse_hex_byte
+        call .parse_hex_byte            ; Parse start address low
         mov c, a
 
-        push bc
-
-        inc de                          ; If . then end address to come
-        mov a, [de]
+        mov a, [de]                     ; If . then end address to come
         cmp "."
         jne ..no_end_address
+        inc de
+           
+        push bc
 
-        inc de                          ; Parse end address high
-        call .parse_hex_byte
+        call .parse_hex_byte            ; Parse end address high
         mov b, a
-
-        inc de                          ; Parse end address low
-        call .parse_hex_byte
+  
+        call .parse_hex_byte            ; Parse end address low
         mov c, a
 
         call .skip_whitespace           ; If not end of line then error
-        inc de
         mov a, [de]
         cmp "\n"
         jne .error
@@ -327,7 +315,6 @@ monitor:
 
 ..no_end_address:
         call .skip_whitespace           ; If not end of line then error
-        inc de
         mov a, [de]
         cmp "\n"
         jne .error

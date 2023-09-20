@@ -143,10 +143,10 @@ int main() {
                             // Maybe I should implement vectors for reset and interrupt like a 6502
 
                             // PC_L = 0x00
-                            addStep(nPC_OUT | nRAM_OUT | PC_L_WRITE | ALU_OP_ZERO);
+                            addStep(nPC_OUT | PC_L_WRITE | ALU_OP_ZERO);
 
-                            // PC_H = 0x10
-                            addStep(nPC_OUT | nRAM_OUT | PC_H_WRITE | ALU_OP_A_PLUS_1);
+                            // PC_H = 0x01
+                            addStep(nPC_OUT | PC_H_WRITE | ALU_OP_A_PLUS_1);
 
                             // Load literally anything else into IR
                             addStep(nPC_OUT | nRAM_OUT | IR_WRITE | END_INSTRUCTION);
