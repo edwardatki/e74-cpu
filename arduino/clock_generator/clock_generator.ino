@@ -1,18 +1,20 @@
 bool running = false;
-bool single_step = false;
+bool clock_state = false;
 
 const int RUN_SW_PIN = 2;
 const int STEP_SW_PIN = 0;
-
+const int POTENTIOMETER_PIN = 3;
 const int CLOCK_PIN = 4;
 const int RUN_LED_PIN = 1;
 
 void setup() {
   pinMode(RUN_SW_PIN, INPUT_PULLUP);
   pinMode(STEP_SW_PIN, INPUT_PULLUP);
-
+  pinMode(POTENTIOMETER_PIN, INPUT);
   pinMode(CLOCK_PIN, OUTPUT);
+  digitalWrite(CLOCK_PIN, clock_state);
   pinMode(RUN_LED_PIN, OUTPUT);
+  digitalWrite(RUN_LED_PIN, running);
 }
 
 void loop() {
@@ -24,8 +26,8 @@ void loop() {
   }
   
   if ((!run_one_shot) && ((millis() - run_press_start) > 20)) {
-    if (running) single_step = (millis() / 50) % 2;
     running = !running;
+    digitalWrite(RUN_LED_PIN, running);
     run_one_shot = true;
   }
 
@@ -37,15 +39,22 @@ void loop() {
   }
   
   if ((!step_one_shot) && ((millis() - step_press_start) > 20)) {
-    single_step = !single_step;
+    clock_state = !clock_state;
     step_one_shot = true;
   }
 
-  digitalWrite(RUN_LED_PIN, running);
-
   if (running) {
-    digitalWrite(CLOCK_PIN, (millis() / 50) % 2);  // 10 Hz
+    // Read is 0 to 1023, need from 1023 to 1
+    int period = 1024-analogRead(POTENTIOMETER_PIN);
+
+    static unsigned long last_toggle = millis();
+    unsigned long next_toggle = last_toggle + period;
+    if (millis() > next_toggle) {
+      clock_state = !clock_state;
+      digitalWrite(CLOCK_PIN, clock_state);
+      last_toggle = millis();
+    }
   } else {
-    digitalWrite(CLOCK_PIN, single_step);
+    digitalWrite(CLOCK_PIN, clock_state);
   }
 }
