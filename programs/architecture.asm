@@ -96,40 +96,40 @@
 	jmp {i: i16} => 0x4D @ i
     jmp bc => 0x4E
     jmp de => 0x4F
-    jmp [bc] => 0x50
-    jmp [de] => 0x51
+    ; jmp [bc] => 0x50
+    ; jmp [de] => 0x51
 
     jc {i: i16} => 0x52 @ i
-    jc bc => 0x53
-    jc de => 0x54
-    jc [bc] => 0x55
-    jc [de] => 0x56
+    ; jc bc => 0x53
+    ; jc de => 0x54
+    ; jc [bc] => 0x55
+    ; jc [de] => 0x56
 
     jnc {i: i16} => 0x57 @ i
-    jnc bc => 0x58
-    jnc de => 0x59
-    jnc [bc] => 0x5A
-    jnc [de] => 0x5B
+    ; jnc bc => 0x58
+    ; jnc de => 0x59
+    ; jnc [bc] => 0x5A
+    ; jnc [de] => 0x5B
 
     je {i: i16} => 0x5C @ i
-    je bc => 0x5D
-    je de => 0x5E
-    je [bc] => 0x5F
-    je [de] => 0x60
+    ; je bc => 0x5D
+    ; je de => 0x5E
+    ; je [bc] => 0x5F
+    ; je [de] => 0x60
 
     jne {i: i16} => 0x61 @ i
-    jne bc => 0x62
-    jne de => 0x63
-    jne [bc] => 0x64
-    jne [de] => 0x65
+    ; jne bc => 0x62
+    ; jne de => 0x63
+    ; jne [bc] => 0x64
+    ; jne [de] => 0x65
 
     cmp {i: i8} => 0x66 @ i
     cmp b => 0x67
     cmp c => 0x68
     cmp d => 0x69
     cmp e => 0x6A
-    cmp [bc] => 0x6B
-    cmp [de] => 0x6C
+    ; cmp [bc] => 0x6B
+    ; cmp [de] => 0x6C
 
     mov a, [bc] => 0x6D
     mov d, [bc] => 0x6E
@@ -156,8 +156,8 @@
     call {i: i16} => 0x7D @ i
     call bc => 0x7E
     call de => 0x7F
-    call [bc] => 0x80
-    call [de] => 0x81
+    ; call [bc] => 0x80
+    ; call [de] => 0x81
 
     ret => 0x82
 
