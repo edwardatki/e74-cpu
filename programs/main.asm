@@ -186,6 +186,11 @@ monitor:
         ret
 
 .help_command:
+        call .skip_whitespace           ; If not end of line then error
+        mov a, [de]
+        cmp "\n"
+        jne .error
+
         mov bc, help_message
         call print_string
         jmp .end_of_line
@@ -198,6 +203,11 @@ monitor:
         
         call .parse_hex_byte            ; Parse address low
         mov c, a
+
+        call .skip_whitespace           ; If not end of line then error
+        mov a, [de]
+        cmp "\n"
+        jne .error
 
         mov a, b                        ; Print address if parsed correctly
         call print_u8_hex
@@ -224,15 +234,24 @@ monitor:
         call .parse_hex_byte            ; Parse address low
         mov c, a
 
+        call .skip_whitespace
+             
+        call .parse_hex_byte            ; Parse data to write
+
+        push a
+        call .skip_whitespace           ; If not end of line then error
+        mov a, [de]
+        cmp "\n"
+        pop a
+        jne .error
+        push a
+
         mov a, b                        ; Print address if parsed correctly
         call print_u8_hex
         mov a, c
         call print_u8_hex
 
-        call .skip_whitespace
-             
-        call .parse_hex_byte            ; Parse data to write
-
+        pop a
         mov [bc], a                     ; Write data to address
         
         mov a, ":"
@@ -246,15 +265,55 @@ monitor:
         
         jmp .end_of_line
 
+; 00d0.00df no crash
+; 00d0.00e0 no crash
+; 00e0.00ef no crash
+; 00e0.00f0 crash
 .dump_command:
         call .skip_whitespace
           
-        call .parse_hex_byte            ; Parse address high
+        call .parse_hex_byte            ; Parse start address high
         mov b, a
 
-        call .parse_hex_byte            ; Parse address low
+        call .parse_hex_byte            ; Parse start address low
+        and 0xf0                        ; Align to 16 bytes
         mov c, a
 
+        mov a, [de]                     ; If . then end address to come
+        cmp "."
+        jne ..no_end_address
+        inc de
+           
+        push bc
+
+        call .parse_hex_byte            ; Parse end address high
+        mov b, a
+  
+        call .parse_hex_byte            ; Parse end address low
+        and 0xf0                        ; Align to 16 bytes
+        mov c, a
+
+        call .skip_whitespace           ; If not end of line then error
+        mov a, [de]
+        cmp "\n"
+        jne .error
+
+        mov de, bc                      ; End address in DE
+        inc de
+        pop bc                          ; Start address in BC
+
+        jmp ..got_end_address
+
+..no_end_address:
+        call .skip_whitespace           ; If not end of line then error
+        mov a, [de]
+        cmp "\n"
+        jne .error
+
+        mov de, bc                      ; If no end address given then use start address plus 1
+..got_end_address:
+        push de
+..next_line:
         mov a, b                        ; Print address if parsed correctly
         call print_u8_hex
         mov a, c
@@ -263,7 +322,6 @@ monitor:
         mov a, ":"
         call put_char
 
-        push de
         mov e, 15
 ..loop:
         mov a, [bc]
@@ -271,6 +329,10 @@ monitor:
         mov a, " "
         call put_char
         inc bc
+        jnc ..no_wrap                    ; Don't wrap back to start of memory WHY DOES THIS NOT WORK
+        pop de
+        jmp ..exit
+..no_wrap:
         dec e
         jc ..loop
 
@@ -278,7 +340,21 @@ monitor:
         call put_char
 
         pop de
-      
+        mov a, d
+        cmp b
+        je ..high_equal                 ; If end adress high < current address high then exit
+        jnc ..exit
+..high_equal:
+        jc ..low_check_skip             ; If end address high > current address high then skip low check
+        mov a, e
+        cmp c
+        jnc ..exit                      ; If end address low <= current address low
+..low_check_skip:
+        push de
+
+        jmp ..next_line
+
+..exit:
         jmp .end_of_line
 
 .disassemble_command:
@@ -309,6 +385,7 @@ monitor:
         jne .error
 
         mov de, bc                      ; End address in DE
+        inc de
         pop bc                          ; Start address in BC
 
         jmp ..got_end_address
@@ -327,10 +404,10 @@ monitor:
         pop de
         mov a, d
         cmp b
-        jc ..low_check_skip              ; If end address high > current address high
+        jc ..low_check_skip             ; If end address high > current address high
         mov a, e
         cmp c
-        jnc ..exit                        ; If end address low <= current address low
+        jnc ..exit                      ; If end address low <= current address low
 ..low_check_skip:
         push de
 
@@ -390,14 +467,17 @@ monitor:
 
 .execute_command:
         call .skip_whitespace
-
-        inc de                          ; Parse address high
-        call .parse_hex_byte
+    
+        call .parse_hex_byte            ; Parse address high
         mov b, a
-
-        inc de                          ; Parse address low
-        call .parse_hex_byte
+              
+        call .parse_hex_byte            ; Parse address low
         mov c, a
+
+        call .skip_whitespace           ; If not end of line then error
+        mov a, [de]
+        cmp "\n"
+        jne .error
 
         call bc                         ; Call address
 
@@ -407,6 +487,11 @@ monitor:
         jmp .end_of_line
 
 .return_code_command:
+        call .skip_whitespace           ; If not end of line then error
+        mov a, [de]
+        cmp "\n"
+        jne .error
+
         mov bc, return_code             ; Read return code
         mov a, [bc]
         call print_u8_dec
@@ -418,7 +503,6 @@ monitor:
         mov bc, error_message           ; Print error message
         call print_string
 .end_of_line:
-
         mov bc, input_buffer_start      ; Set pointer back to start of buffer
         mov de, input_pointer
         mov [de], bc
@@ -438,6 +522,8 @@ help_message:
 #d " R aaaa        read data from address\n"
 #d " W aaaa dd     write data to address\n"
 #d " D aaaa        dump memory at address\n"
+#d " D aaaa.aaaa   dump memory in range\n"
+#d " U aaaa        disassemble memory at address\n"
 #d " U aaaa.aaaa   disassemble memory in range\n"
 #d " X aaaa        call address\n"
 #d " ?             print return code\n"
