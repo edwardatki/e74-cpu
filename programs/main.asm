@@ -89,6 +89,10 @@ monitor:
         dec de
         ret
 .put_prompt:
+        mov a, 0                        ; Reset line ready flag
+        mov de, line_ready_flag
+        mov [de], a
+
         mov a, ">"
         call put_char
         tei                             ; Enable interrupts
@@ -97,10 +101,6 @@ monitor:
         mov a, [de]                     ; Could go do other things while we wait
         cmp 0
         je .wait_for_line               ; Interrupts will already be disabled by the handler if EOL
-
-        mov a, 0                        ; Reset line ready flag
-        mov de, line_ready_flag
-        mov [de], a
 
         mov de, input_buffer_start
         mov a, [de]                     ; First character determines command
@@ -566,6 +566,7 @@ fibonacci_demo:
 	ret
 
 maze_demo:
+        mov de, TERMINAL
 .loop:
         call rand_u8
         mov b, "\\"
@@ -575,7 +576,12 @@ maze_demo:
 .skip:
         mov a, b
         call put_char
-        jmp .loop
+        mov a, [de]
+        cmp 3                           ; If ctrl-c exit
+        jne .loop
+
+        mov a, "\n"
+        call put_char
         mov a, 0
 	ret
 
@@ -716,6 +722,9 @@ circle_demo:
 
 ; 16x16 grid
 game_of_life:
+        mov bc, .start_message
+        call print_string
+        
         mov a, 0
         mov de, life_grid
 .clear_loop:
@@ -725,14 +734,14 @@ game_of_life:
         mov [de], a
         inc e
         jnc .clear_loop
-
-        mov a, 1
-        mov de, life_grid+118
-        mov [de], a
-        mov de, life_grid+119
-        mov [de], a
-        mov de, life_grid+120
-        mov [de], a
+        
+        ; mov a, 1
+        ; mov de, life_grid+118
+        ; mov [de], a
+        ; mov de, life_grid+119
+        ; mov [de], a
+        ; mov de, life_grid+120
+        ; mov [de], a
 
 .next_frame:
         mov bc, 0
@@ -742,7 +751,7 @@ game_of_life:
         inc de
         cmp 0
         mov a, " "
-        je .no_output                   ; If X*X + Y*Y > R*R then no output
+        je .no_output
         mov a, "X"
 .no_output:
         call put_char
@@ -762,17 +771,19 @@ game_of_life:
         cmp 15
         jnc .draw_loop
 
-        mov a, "\n"
-        call put_char
+        mov bc, .next_message
+        call print_string
 
         mov de, TERMINAL
-.wait_loop:                           
+.wait_loop:
         mov a, [de]                     ; Wait for key pressed
         cmp 0
         je .wait_loop
+        cmp 3                           ; If ctrl-c exit
+        je .exit
 
         mov de, life_grid_buffer        ; Proccess new grid into buffer
-.update_loop:   
+.update_loop:
         mov bc, life_grid
         mov a, 0
 
@@ -884,25 +895,37 @@ game_of_life:
 
         jmp .next_frame
 
+.exit:
+        call rand_u8
         mov a, 0
         ret
 
+.next_message:
+#d "-------------------------------\n\0"
+.start_message:
+#d "Press any key for next iteration\n"
+#d "Ctrl-C to exit\n"
+#d "-------------------------------\n\0"
+
 #bank RAM
 
+; Monitor variables
 line_ready_flag:
 #res 1
 return_code:
 #res 1
 
-#align 0x100 * 8
 input_pointer:
 #res 2
 input_buffer_start:
 #res 32
 input_buffer_end:
 
-#align 0x100 * 8
+; Demo program variables
+#addr 0x8100
 prime_sieve:
+
+#addr 0x8100
 life_grid:
 #res 0x100
 life_grid_buffer:
