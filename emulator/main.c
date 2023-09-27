@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <unistd.h>
 #include <curses.h>
@@ -307,17 +308,24 @@ int main() {
     curs_set(0);
     move(1, 0);
 
+    // Load microcode ROM image
     FILE* f1 = fopen("../microcode/microcode.bin", "rb");
     if (!f1) return 1;
     int microcode_size = fread(microcode, sizeof(uint32_t), 0x10000, f1);
     if (microcode_size != 0x10000) return 1;
     fclose(f1);
 
+    // Load program ROM image
     FILE* f2 = fopen("../programs/main.bin", "rb");
     if (!f2) return 1;
-    int program_size = fread(memory, sizeof(uint32_t), 0x10000, f2);
-    if (program_size > 0x10000) return 1;
+    int program_size = fread(memory, sizeof(uint32_t), 0x8000, f2);
+    if (program_size > 0x8000) return 1;
     fclose(f2);
+
+    // Fill RAM with random data
+    for (int i = 0x8000; i < 0x10000; i++) {
+        memory[i] = rand();
+    }
 
     while (1) {
         uint8_t c = getch();
