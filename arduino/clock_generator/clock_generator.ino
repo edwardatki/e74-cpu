@@ -18,41 +18,49 @@ void setup() {
 }
 
 void loop() {
-  static unsigned long run_press_start = millis();
-  static bool run_one_shot = false;
-  if (digitalRead(RUN_SW_PIN)) {
-    run_press_start = millis();
-    run_one_shot = false;
-  }
-  
-  if ((!run_one_shot) && ((millis() - run_press_start) > 20)) {
-    running = !running;
-    digitalWrite(RUN_LED_PIN, running);
-    run_one_shot = true;
+  static unsigned long period = 100000;
+  static int loop_count = 0;
+
+  // Don't do slow stuff every loop
+  if (loop_count++ > 1000) {
+    static unsigned long run_press_start = millis();
+    static bool run_one_shot = false;
+    if (digitalRead(RUN_SW_PIN)) {
+      run_press_start = millis();
+      run_one_shot = false;
+    }
+    
+    if ((!run_one_shot) && ((millis() - run_press_start) > 20)) {
+      running = !running;
+      digitalWrite(RUN_LED_PIN, running);
+      run_one_shot = true;
+    }
+
+    static unsigned long step_press_start = millis();
+    static bool step_one_shot = false;
+    if (digitalRead(STEP_SW_PIN)) {
+      step_press_start = millis();
+      step_one_shot = false;
+    }
+    
+    if ((!step_one_shot) && ((millis() - step_press_start) > 20)) {
+      clock_state = !clock_state;
+      step_one_shot = true;
+    }
+
+    // Read is 0 to 1023, clock should be 2.5Hz to 2.5KHz so period 200 to 204800
+    period = 204800/(analogRead(POTENTIOMETER_PIN)+1);
+    loop_count = 0;
   }
 
-  static unsigned long step_press_start = millis();
-  static bool step_one_shot = false;
-  if (digitalRead(STEP_SW_PIN)) {
-    step_press_start = millis();
-    step_one_shot = false;
-  }
-  
-  if ((!step_one_shot) && ((millis() - step_press_start) > 20)) {
-    clock_state = !clock_state;
-    step_one_shot = true;
-  }
 
   if (running) {
-    // Read is 0 to 1023, need from 1023 to 1
-    int period = 1024-analogRead(POTENTIOMETER_PIN);
-
-    static unsigned long last_toggle = millis();
+    static unsigned long last_toggle = micros();
     unsigned long next_toggle = last_toggle + period;
-    if (millis() > next_toggle) {
+    if (micros() > next_toggle) {
       clock_state = !clock_state;
       digitalWrite(CLOCK_PIN, clock_state);
-      last_toggle = millis();
+      last_toggle = micros();
     }
   } else {
     digitalWrite(CLOCK_PIN, clock_state);
