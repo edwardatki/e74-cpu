@@ -224,6 +224,9 @@
 
     pushf => 0xB0
     popf => 0xB1
+
+    mov bc, [bc] => 0xB2
+    mov de, [de] => 0xB3
 }
 
 ; cmp i8

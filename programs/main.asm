@@ -8,24 +8,22 @@
 interrupt_handler:
         push a
         push bc
-        push de
         pushf
 
-        mov de, TERMINAL                ; Get character
-        mov a, [de]
-        mov [de], a
+        mov bc, TERMINAL                ; Get character
+        mov a, [bc]
+        mov [bc], a
         
-        mov de, input_pointer           ; Store character in buffer
-        mov bc, [de]
+        mov bc, input_pointer           ; Store character in buffer
+        mov bc, [bc]
         mov [bc], a
 
         cmp "\n"                        ; Test for newline and set flag
         jne .skip_1
-        mov de, line_ready_flag
+        mov bc, line_ready_flag
         mov a, 1
-        mov [de], a
+        mov [bc], a
         popf
-        pop de
         pop bc
         pop a
         ret                             ; Use regular return so interrupts remain disabled
@@ -38,11 +36,15 @@ interrupt_handler:
         jne .skip_2
         mov bc, input_buffer_start      ; Wrap buffer back to start
 .skip_2:
-        mov de, input_pointer
-        mov [de], bc
+        mov a, b
+        push c
+        mov bc, input_pointer
+        mov [bc], a
+        inc bc
+        pop a
+        mov [bc], a
 
         popf
-        pop de
         pop bc
         pop a
         reti
@@ -435,8 +437,7 @@ monitor:
         mov e, a
 
         push bc
-        mov bc, [de]
-        mov de, bc
+        mov de, [de]
         pop bc
 
         inc bc
@@ -513,7 +514,7 @@ monitor:
 #bank ROM
 
 welcome_message:
-#d "--- E74 MINICOMPUTER ---\n"
+#d "\n--- E74 MINICOMPUTER ---\n"
 #d " By Ed Atkinson 2023\n"
 #d " Type 'H' for help\n\n\0"
 
