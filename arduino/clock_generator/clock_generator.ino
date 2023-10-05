@@ -49,7 +49,10 @@ void loop() {
     }
 
     // Read is 0 to 1023, clock should be 2.5Hz to 2.5KHz so period 200 to 204800
-    period = 204800/(analogRead(POTENTIOMETER_PIN)+1);
+    // period = 204800/(analogRead(POTENTIOMETER_PIN)+1);
+    // period = 100; // 5KHz
+    // period = 50; // 10KHz
+    period = 30; // 16.6KHz
     loop_count = 0;
   }
 

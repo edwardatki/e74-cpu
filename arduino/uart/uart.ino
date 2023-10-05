@@ -1,17 +1,17 @@
 
-const int a12_pin = 2;
-const int a13_pin = 3;
-const int a14_pin = 4;
-const int a15_pin = 5;
+const int a12_pin = 2; // PD2
+const int a13_pin = 3; // PD3
+const int a14_pin = 4; // PD4
+const int a15_pin = 5; // PD5
 
-const int d0_pin = 6;
-const int d1_pin = 7;
-const int d2_pin = 8;
-const int d3_pin = 9;
-const int d4_pin = 10;
-const int d5_pin = 11;
-const int d6_pin = 12;
-const int d7_pin = 13;
+const int d0_pin = 6;  // PD6
+const int d1_pin = 7;  // PD7
+const int d2_pin = 8;  // PB0
+const int d3_pin = 9;  // PB1
+const int d4_pin = 10; // PB2
+const int d5_pin = 11; // PB3
+const int d6_pin = 12; // PB4
+const int d7_pin = 13; // PB5
 
 const int mem_read_pin = 14;    // Active low
 const int mem_write_pin = 15;   // Active low
@@ -21,58 +21,63 @@ const int interrupt_pin = 17;   // Active high
 const int a0_pin = 18;
 const int a1_pin = 19;
 
-bool valid_address() {
+inline bool valid_address() {
   // Mapped from 0x7000 to 0x8000
-  if (digitalRead(a15_pin) != false) return false;
-  if (digitalRead(a14_pin) != true) return false;
-  if (digitalRead(a13_pin) != true) return false;
-  if (digitalRead(a12_pin) != true) return false;
-
-  return true;
+  return ((PIND & 0b00111100) >> 2) == 0b0111;
 }
 
-char read_data() {
-  char data = 0;
-
-  pinMode(d0_pin, INPUT);
-  pinMode(d1_pin, INPUT);
-  pinMode(d2_pin, INPUT);
-  pinMode(d3_pin, INPUT);
-  pinMode(d4_pin, INPUT);
-  pinMode(d5_pin, INPUT);
-  pinMode(d6_pin, INPUT);
-  pinMode(d7_pin, INPUT);
-
-  data |= digitalRead(d0_pin) << 0;
-  data |= digitalRead(d1_pin) << 1;
-  data |= digitalRead(d2_pin) << 2;
-  data |= digitalRead(d3_pin) << 3;
-  data |= digitalRead(d4_pin) << 4;
-  data |= digitalRead(d5_pin) << 5;
-  data |= digitalRead(d6_pin) << 6;
-  data |= digitalRead(d7_pin) << 7;
-
-  return data;
+inline void set_data_input() {
+  DDRB &= 0b11000000;
+  DDRD &= 0b00111111;
 }
 
-void write_data(char data) {
-  digitalWrite(d0_pin, (data >> 0) & 1);
-  digitalWrite(d1_pin, (data >> 1) & 1);
-  digitalWrite(d2_pin, (data >> 2) & 1);
-  digitalWrite(d3_pin, (data >> 3) & 1);
-  digitalWrite(d4_pin, (data >> 4) & 1);
-  digitalWrite(d5_pin, (data >> 5) & 1);
-  digitalWrite(d6_pin, (data >> 6) & 1);
-  digitalWrite(d7_pin, (data >> 7) & 1);
+inline void set_data_output() {
+  DDRB |= 0b00111111;
+  DDRD |= 0b11000000;
+}
 
-  pinMode(d0_pin, OUTPUT);
-  pinMode(d1_pin, OUTPUT);
-  pinMode(d2_pin, OUTPUT);
-  pinMode(d3_pin, OUTPUT);
-  pinMode(d4_pin, OUTPUT);
-  pinMode(d5_pin, OUTPUT);
-  pinMode(d6_pin, OUTPUT);
-  pinMode(d7_pin, OUTPUT);
+inline char read_data() {
+  return ((PINB & 0b00111111) << 2) | ((PIND & 0b11000000) >> 6);
+}
+
+inline void write_data(char data) {
+  PORTD = (PORTD & 0b00111111) | ((data & 0b00000011) << 6);
+  PORTB = (PORTB & 0b11000000) | ((data & 0b11111100) >> 2);
+}
+
+inline char uart_read() {
+  return UDR0;
+}
+
+
+inline void uart_write(char data) {
+  while (UCSR0A & (1 << UDRE0) == 0); // Wait for any ongoing transmit to finish
+  UDR0 = data;
+}
+
+inline bool uart_available() {
+  return UCSR0A & (1 << RXC0);
+}
+
+void uart_write_string(const char * data) {
+  for(uint8_t count = 0; data[count] != 0; count++) {
+    uart_write(data[count]);
+  }
+}
+
+#define BAUD 115200UL   // set this to the BAUD rate you want.
+#define UB ((F_CPU / (8 * BAUD)) - 1)
+
+inline void uart_init() {
+  // UART TX and RX pins
+  DDRD |=  (1 << PORTD1);
+  DDRD &= ~(1 << PORTD0);
+
+  UCSR0A = 0x02;
+  UCSR0B = 0x18;
+  UCSR0C = 0x06;
+  UBRR0H = (UB >> 8);   // set baud rate
+  UBRR0L = (UB & 0xFF); // HL register
 }
 
 void setup() {
@@ -102,8 +107,8 @@ void setup() {
   pinMode(interrupt_pin, OUTPUT);
   digitalWrite(interrupt_pin, false);
 
-  Serial.begin(115200);
-  Serial.println("UART READY...");
+  uart_init();
+  uart_write_string("UART READY...\n");
 }
 
 void loop() {
@@ -112,52 +117,34 @@ void loop() {
 
   bool write_low = !digitalRead(mem_write_pin);
   static bool was_write_low = false;
-
-  // Serial.print(digitalRead(a15_pin));
-  // Serial.print(" ");
-  // Serial.print(digitalRead(a14_pin));
-  // Serial.print(" ");
-  // Serial.print(digitalRead(a13_pin));
-  // Serial.print(" ");
-  // Serial.print(digitalRead(a12_pin));
-  // Serial.print(" ");
-  // Serial.print(" ... ");
-  // Serial.print(digitalRead(a1_pin));
-  // Serial.print(" ");
-  // Serial.print(digitalRead(a0_pin));
-  // Serial.print(" : ");
-  // Serial.print(read_data());
-  // Serial.print(", ");
-  // Serial.print(valid_address());
-  // Serial.print(" ");
-  // Serial.print(read_low);
-  // Serial.print(" ");
-  // Serial.println(write_low);
+  
+  bool serial_available = uart_available();
+  digitalWrite(interrupt_pin, serial_available);
 
   if (valid_address()) {
     digitalWrite(mem_inhibit_pin, false);
 
     if (write_low && !was_write_low) {        // Read data from bus on falling edge
-      Serial.print(read_data());
+      // set_data_input();
+      uart_write(read_data());
     } else if (read_low && !was_read_low) {   // Write data to bus on falling edge
-      if (Serial.available() > 0) {
-        write_data(Serial.read());
+      if (serial_available) {
+        write_data(uart_read());
       } else {
         write_data(0);
       }
+      set_data_output();
     } 
 
     if (!read_low) {                          // Otherwise get off the bus
-      read_data();
+      set_data_input();
     }
 
   } else {
     digitalWrite(mem_inhibit_pin, true);
 
-    read_data();
+    set_data_input();
   }
-
-  digitalWrite(interrupt_pin, Serial.available() > 0);
 
   was_read_low = read_low;
   was_write_low = write_low;
