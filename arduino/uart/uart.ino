@@ -45,39 +45,10 @@ inline void write_data(char data) {
   PORTB = (PORTB & 0b11000000) | ((data & 0b11111100) >> 2);
 }
 
-inline char uart_read() {
-  return UDR0;
-}
-
-
+// This seems significantly faster than Serial.write()
 inline void uart_write(char data) {
   while (UCSR0A & (1 << UDRE0) == 0); // Wait for any ongoing transmit to finish
   UDR0 = data;
-}
-
-inline bool uart_available() {
-  return UCSR0A & (1 << RXC0);
-}
-
-void uart_write_string(const char * data) {
-  for(uint8_t count = 0; data[count] != 0; count++) {
-    uart_write(data[count]);
-  }
-}
-
-#define BAUD 115200UL   // set this to the BAUD rate you want.
-#define UB ((F_CPU / (8 * BAUD)) - 1)
-
-inline void uart_init() {
-  // UART TX and RX pins
-  DDRD |=  (1 << PORTD1);
-  DDRD &= ~(1 << PORTD0);
-
-  UCSR0A = 0x02;
-  UCSR0B = 0x18;
-  UCSR0C = 0x06;
-  UBRR0H = (UB >> 8);   // set baud rate
-  UBRR0L = (UB & 0xFF); // HL register
 }
 
 void setup() {
@@ -107,8 +78,8 @@ void setup() {
   pinMode(interrupt_pin, OUTPUT);
   digitalWrite(interrupt_pin, false);
 
-  uart_init();
-  uart_write_string("UART READY...\n");
+  Serial.begin(115200);
+  Serial.println("UART READY...");
 }
 
 void loop() {
@@ -118,18 +89,17 @@ void loop() {
   bool write_low = !digitalRead(mem_write_pin);
   static bool was_write_low = false;
   
-  bool serial_available = uart_available();
+  bool serial_available = Serial.available();
   digitalWrite(interrupt_pin, serial_available);
 
   if (valid_address()) {
     digitalWrite(mem_inhibit_pin, false);
 
     if (write_low && !was_write_low) {        // Read data from bus on falling edge
-      // set_data_input();
       uart_write(read_data());
     } else if (read_low && !was_read_low) {   // Write data to bus on falling edge
       if (serial_available) {
-        write_data(uart_read());
+        write_data(Serial.read());
       } else {
         write_data(0);
       }
