@@ -1,4 +1,4 @@
-TERMINAL = 0x7FFF
+TERMINAL = 0x7000
 
 #bank ROM
 

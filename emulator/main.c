@@ -67,12 +67,16 @@ uint8_t instr_reg = 0;
 uint8_t micro_counter = 0;
 
 uint8_t waiting_char = 0;
+uint8_t char_available = 0;
 
 uint8_t read_memory(uint16_t address) {
-    if (address == 0x7FFF) {                        // TERMINAL
+    if (address == 0x7000) {                        // TERMINAL
         uint8_t data = waiting_char;
         waiting_char = 0;
+        char_available = 0;
         return data;
+    } else if (address == 0x7001) {
+        return char_available;
     }
 
     if (address < 0x8000) return memory[address];   // ROM
@@ -80,7 +84,7 @@ uint8_t read_memory(uint16_t address) {
 }
 
 void write_memory(uint16_t address, uint8_t data) {
-    if (address == 0x7FFF) printw("%c", data);      // TERMINAL
+    if (address == 0x7000) printw("%c", data);      // TERMINAL
 
     if (address < 0x8000) return;                   // ROM
     else memory[address] = data;                    // RAM
@@ -334,8 +338,10 @@ int main() {
         if (waiting_char == 0) {
             if (c != 0xff) {
                 waiting_char = c;
+                char_available = 1;
             } else {
                 waiting_char = 0;
+                char_available = 0;
             }
         }
 

@@ -866,28 +866,28 @@ int main() {
                             if (opcode == 0x49) {
                                 // BC++
                                 addStep(nBC_OUT | nAL_OUT | C_WRITE | ALU_OP_A_PLUS_1 | FLAGS_SYS_UPDATE);
-                                addStep(nBC_OUT | nAH_OUT | B_WRITE | (!sysCarry ? ALU_OP_A_PLUS_1 : ALU_OP_A) | END_INSTRUCTION);
+                                addStep(nBC_OUT | nAH_OUT | B_WRITE | (!sysCarry ? ALU_OP_A_PLUS_1 : ALU_OP_A) | FLAGS_USR_UPDATE | END_INSTRUCTION);
                             }
 
                             // --- INC DE ---
                             if (opcode == 0x4A) {
                                 // DE++
                                 addStep(nDE_OUT | nAL_OUT | E_WRITE | ALU_OP_A_PLUS_1 | FLAGS_SYS_UPDATE);
-                                addStep(nDE_OUT | nAH_OUT | D_WRITE | (!sysCarry ? ALU_OP_A_PLUS_1 : ALU_OP_A) | END_INSTRUCTION);
+                                addStep(nDE_OUT | nAH_OUT | D_WRITE | (!sysCarry ? ALU_OP_A_PLUS_1 : ALU_OP_A) | FLAGS_USR_UPDATE | END_INSTRUCTION);
                             }
 
                             // --- DEC BC ---
                             if (opcode == 0x4B) {
                                 // BC--
                                 addStep(nBC_OUT | nAL_OUT | C_WRITE | ALU_OP_A_MINUS_1 | FLAGS_SYS_UPDATE);
-                                addStep(nBC_OUT | nAH_OUT | B_WRITE | (sysCarry ? ALU_OP_A_MINUS_1 : ALU_OP_A) | END_INSTRUCTION);
+                                addStep(nBC_OUT | nAH_OUT | B_WRITE | (sysCarry ? ALU_OP_A_MINUS_1 : ALU_OP_A) | FLAGS_USR_UPDATE | END_INSTRUCTION);
                             }
 
                             // --- DEC DE ---
                             if (opcode == 0x4C) {
                                 // DE--
                                 addStep(nDE_OUT | nAL_OUT | E_WRITE | ALU_OP_A_MINUS_1 | FLAGS_SYS_UPDATE);
-                                addStep(nDE_OUT | nAH_OUT | D_WRITE | (sysCarry ? ALU_OP_A_MINUS_1 : ALU_OP_A) | END_INSTRUCTION);
+                                addStep(nDE_OUT | nAH_OUT | D_WRITE | (sysCarry ? ALU_OP_A_MINUS_1 : ALU_OP_A) | FLAGS_USR_UPDATE | END_INSTRUCTION);
                             }
 
                             // --- JMP i16 ---

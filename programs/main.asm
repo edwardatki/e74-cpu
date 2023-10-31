@@ -132,6 +132,9 @@ monitor:
         cmp "X"                         ; Execute command
         je .execute_command
 
+        cmp "P"                         ; Upload command
+        je .upload_command
+
         cmp "?"                         ; Return code command
         je .return_code_command
 
@@ -485,6 +488,60 @@ monitor:
         mov bc, return_code             ; Store return code
         mov [bc], a
         
+        jmp .end_of_line
+
+.upload_command:
+        call .skip_whitespace
+        
+        call .parse_hex_byte            ; Parse start address high
+        mov b, a
+              
+        call .parse_hex_byte            ; Parse start address low
+        mov c, a
+
+        push bc
+
+        call .skip_whitespace
+
+        call .parse_hex_byte            ; Parse length high
+        mov b, a
+              
+        call .parse_hex_byte            ; Parse length low
+        mov c, a
+
+        call .skip_whitespace           ; If not end of line then error
+        mov a, [de]
+        cmp "\n"
+        jne .error
+
+        pop de
+
+..loop:
+        dec bc
+        je ..exit
+        push bc
+..wait:
+        mov bc, TERMINAL+1
+        mov a, [bc]
+        cmp 0
+        je ..wait
+
+        mov bc, TERMINAL
+        mov a, "."
+        mov [bc], a
+        mov a, [bc]
+        pop bc
+
+        mov [de], a
+        inc de
+
+        jmp ..loop
+
+..exit:
+        mov bc, TERMINAL
+        mov a, "\n"
+        mov [bc], a
+
         jmp .end_of_line
 
 .return_code_command:
