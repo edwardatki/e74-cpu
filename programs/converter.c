@@ -44,6 +44,7 @@ int main(int argc, char **argv) {
     unsigned int address = 0;
     unsigned int entry_address;
     int reached_actual_data = 0;
+    fprintf(output_file, "P 0000 0000\n");
     while (fscanf(input_file, "%02x", (unsigned int*)&data) == 1) {
         if (!reached_actual_data) {  // Skip over blank data at start of image
             if (data != 0x00) {
@@ -51,11 +52,15 @@ int main(int argc, char **argv) {
                 reached_actual_data = 1;
             }
         }
-        if (reached_actual_data && (address >= start_address)) fprintf(output_file, "w%04x%02x\n", address, data);
+        // if (reached_actual_data && (address >= start_address)) fprintf(output_file, "w%04x%02x\n", address, data);
+        if (reached_actual_data && (address >= start_address)) fprintf(output_file, "%c", data);
         address++;
     }
 
-    fprintf(output_file, "x%04x\n", entry_address);
+    // fprintf(output_file, "x%04x\n", entry_address);
+    
+    fseek(output_file, 0, SEEK_SET);
+    fprintf(output_file, "P %04x %04x\n", entry_address, address-entry_address);
 
     fclose(input_file);
     fclose(output_file);

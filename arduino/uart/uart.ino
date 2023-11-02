@@ -99,7 +99,8 @@ void loop() {
       uart_write(read_data());
     } else if (read_low && !was_read_low) {   // Write data to bus on falling edge
       if (serial_available) {
-        write_data(Serial.read());
+        if (digitalRead(a0_pin)) write_data(1);
+        else write_data(Serial.read());
       } else {
         write_data(0);
       }

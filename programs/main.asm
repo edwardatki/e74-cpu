@@ -584,6 +584,7 @@ help_message:
 #d " U aaaa        disassemble memory at address\n"
 #d " U aaaa.aaaa   disassemble memory in range\n"
 #d " X aaaa        call address\n"
+#d " P aaaa llll   upload data to memory address\n"
 #d " ?             print return code\n"
 #d "Built-in programs:\n"
 #d " Fibonacci    @ 00EE\n"
