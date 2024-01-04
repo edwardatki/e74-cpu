@@ -1,4 +1,5 @@
 #ruledef {
+    ; Instructions
 	nop => 0xff
 
 	mov a, {i: i8} => 0x01 @ i
@@ -227,6 +228,10 @@
 
     mov bc, [bc] => 0xB2
     mov de, [de] => 0xB3
+
+    ; Psuedo instructions
+    inc a => asm { add 1 }
+    dec a => asm { sub 1 }
 }
 
 ; cmp i8

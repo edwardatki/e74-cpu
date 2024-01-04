@@ -1,5 +1,3 @@
-#include "architecture.asm"
-
 #bank ROM
 
 #addr 0x0000

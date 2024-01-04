@@ -1,3 +1,7 @@
 *.bin
 *.lbi
 *.txt
+*.e74
+
+emulator/microcode_image.h
+emulator/rom_image.h

@@ -7,15 +7,18 @@ clean:
 
 converter.bin: converter.c
 	gcc converter.c -o converter.bin
+	customasm $< architecture.asm -f annotated
 
 %.lbi: %.asm *.asm
-	customasm $< -o $@ -f logisim8
+	customasm $< architecture.asm -o $@ -f logisim8
 
 %.bin: %.asm *.asm
-	customasm $< -f binary
-	customasm $< -f annotated
+	customasm $< architecture.asm -o $@ -f binary
+	
+%.txt: %.asm *.asm
+	customasm $< architecture.asm -o $@ -f annotated
 
-%.e74: %.asm converter.bin *.asm
-	customasm $< -o tmp.txt -f hexstr
+%.e74: %.asm *.asm converter.bin
+	customasm $< architecture.asm -o tmp.txt -f hexstr
 	./converter.bin tmp.txt -o $@
 	rm tmp.txt

@@ -2,7 +2,11 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <string.h>
 #include <curses.h>
+
+#include "rom_image.h"
+#include "microcode_image.h"
 
 #define nSP_OUT 0x00000001
 #define nALU_OUT 0x00000002
@@ -41,10 +45,13 @@
 #define FLAGS_SYS_UPDATE 0x80000000
 
 // 64KB of microcode
-uint32_t microcode[0x10000];
+uint32_t* microcode = (uint32_t*)___microcode_microcode_bin;
 
-// 64KB of memory
-uint8_t memory[0x10000];
+// 32KB of ROM
+uint8_t* rom = ___programs_main_bin;
+
+// 32KB of RAM, although for simplicities sake the array is 64KB and we only use half
+uint8_t ram[0x10000];
 
 uint8_t pc_h_reg = 0;
 uint8_t pc_l_reg = 0;
@@ -69,6 +76,8 @@ uint8_t micro_counter = 0;
 uint8_t waiting_char = 0;
 uint8_t char_available = 0;
 
+int use_ncurses = 1;
+
 uint8_t read_memory(uint16_t address) {
     if (address == 0x7000) {                        // TERMINAL
         uint8_t data = waiting_char;
@@ -79,15 +88,18 @@ uint8_t read_memory(uint16_t address) {
         return char_available;
     }
 
-    if (address < 0x8000) return memory[address];   // ROM
-    else return memory[address];                    // RAM
+    if (address < 0x8000) return rom[address];      // ROM
+    else return ram[address];                       // RAM
 }
 
 void write_memory(uint16_t address, uint8_t data) {
-    if (address == 0x7000) printw("%c", data);      // TERMINAL
+    if (address == 0x7000) {                        // TERMINAL
+        if (use_ncurses) printw("%c", data);
+        else printf("%c", data);
+    }      
 
-    if (address < 0x8000) return;                   // ROM
-    else memory[address] = data;                    // RAM
+    if (address < 0x8000);                          // ROM
+    else ram[address] = data;                       // RAM
 }
 
 uint8_t emulate_alu(uint8_t a, uint8_t b, uint32_t control_word) {
@@ -303,36 +315,76 @@ uint8_t emulate_alu(uint8_t a, uint8_t b, uint32_t control_word) {
     return (uint8_t) result;
 }
 
-int main() {
-    initscr();
-    noecho();
-    raw();
-    timeout(0);
-    scrollok(stdscr, TRUE);
-    curs_set(0);
-    move(1, 0);
-
-    // Load microcode ROM image
-    FILE* f1 = fopen("../microcode/microcode.bin", "rb");
-    if (!f1) return 1;
-    int microcode_size = fread(microcode, sizeof(uint32_t), 0x10000, f1);
-    if (microcode_size != 0x10000) return 1;
-    fclose(f1);
-
-    // Load program ROM image
-    FILE* f2 = fopen("../programs/main.bin", "rb");
-    if (!f2) return 1;
-    int program_size = fread(memory, sizeof(uint32_t), 0x8000, f2);
-    if (program_size > 0x8000) return 1;
-    fclose(f2);
+int main(int argc, char **argv) {
+    char* input_filename = NULL;
+    char* output_filename = NULL;
+    
+    // Process arguments
+    int i = 1;
+    while (i < argc) {
+        if (strcmp(argv[i], "-h") == 0) {
+            printf("Usage: ./emulator.bin [options] [file]\n");
+            printf(" [file] optionally specify a binary file to be loaded to 0x8100 and executed\n");
+            printf("Options:\n");
+            printf(" -h   print help message\n");
+            printf(" -n   don't use ncurses, useful for automated tests\n");
+            return EXIT_SUCCESS;
+            i += 1;
+        } else if (strcmp(argv[i], "-n") == 0) {
+            use_ncurses = 0;
+            i += 1;
+        } else {
+            if (input_filename != NULL) {
+                printf("ERROR: more than one input file supplied\n");
+                return EXIT_FAILURE;
+            }
+            input_filename = argv[i];
+            i += 1;
+        }
+    }
 
     // Fill RAM with random data
     for (int i = 0x8000; i < 0x10000; i++) {
-        memory[i] = rand();
+        ram[i] = rand();
+    }
+
+    // Input files loaded to 0x8100
+    if (input_filename != NULL) {
+        FILE* f0 = fopen(input_filename, "rb");
+        if (!f0) {
+            printf("ERROR: couldn't open \"%s\"\n", input_filename);
+            return EXIT_FAILURE;
+        }
+        if (fseek(f0, sizeof(uint8_t) * 0x8100, SEEK_SET) != 0) {
+            printf("ERROR: couldn't seek to 0x8100 in \"%s\"\n", input_filename);
+            return EXIT_FAILURE;
+        }
+        int input_size = fread(&ram[0x8100], sizeof(uint8_t), (0x10000-0x8100), f0);
+        fclose(f0);
+
+        pc_h_reg = 0x81;
+        pc_l_reg = 0x00;
+        sp_h_reg = 0xff;
+        sp_l_reg = 0xff;
+        instr_reg = ram[0x8100];
+    }
+
+    printf("*** Emulator start ***\n");
+
+    if (use_ncurses) {
+        initscr();
+        noecho();
+        raw();
+        timeout(0);
+        scrollok(stdscr, TRUE);
+        curs_set(0);
+        move(1, 0);
     }
 
     while (1) {
-        uint8_t c = getch();
+        uint8_t c;
+        if (use_ncurses) c = getch();
+        else c = 0;
         if (c == 27) break;
 
         if (waiting_char == 0) {
@@ -376,13 +428,16 @@ int main() {
         // Put alu bus value onto right bus, this must happen after alu bus value computed
         if (~control_word & nALU_OUT) right_bus = alu_bus;
 
-        // int y, x;
-        // getyx(stdscr, y, x);
-        // move(0, 0);
-        // printw("%04x %08x", control_address, control_word);
-        // printw(" A: %02x T: %02x PC: %02x%02x SP: %02x%02x BC: %02x%02x DE: %02x%02x", a_reg, t_reg, pc_h_reg, pc_l_reg, sp_h_reg, sp_l_reg, b_reg, c_reg, d_reg, e_reg);
-        // printw(" mem[%04x]: %02x left: %02x right: %02x alu: %02x ie:%d c:%02x\n", address_bus, read_memory(address_bus), left_bus, right_bus, alu_bus, interrupt_enable, waiting_char);
-        // move(y, x);
+        if (use_ncurses) {
+            int y, x;
+            getyx(stdscr, y, x);
+            move(0, 0);
+            printw("%04x %08x", control_address, control_word);
+            printw(" A: %02x T: %02x PC: %02x%02x SP: %02x%02x BC: %02x%02x DE: %02x%02x", a_reg, t_reg, pc_h_reg, pc_l_reg, sp_h_reg, sp_l_reg, b_reg, c_reg, d_reg, e_reg);
+            printw(" mem[%04x]: %02x left: %02x right: %02x alu: %02x ie:%d c:%02x\n", address_bus, read_memory(address_bus), left_bus, right_bus, alu_bus, interrupt_enable, waiting_char);
+            move(y, x);
+            refresh();
+        }
 
         // Write new values to registers
         if (control_word & PC_H_WRITE) pc_h_reg = alu_bus;
@@ -398,9 +453,23 @@ int main() {
 
         if (~control_word & nRAM_WRITE) write_memory(address_bus, right_bus);
 
-        if (control_word & IR_WRITE) instr_reg = right_bus;
+        static int call_depth = 0;
+        if (control_word & IR_WRITE) {
+            instr_reg = right_bus;
+            if ((instr_reg >= 0x7D) && (instr_reg <= 0x81)) { // If call
+                call_depth++;
+            } else if (instr_reg == 0x82 && (pc_h_reg != 0x00)) { // If return and not from interrupt handler
+                if (call_depth <= 0) {
+                    if (use_ncurses) endwin();
+                    printf("*** Emulator exit with %d ***\n", a_reg);
+                    return a_reg;
+                }
+                call_depth--;
+            }
+        }
 
         micro_counter += 1;
+
         // End of instruction
         if ((micro_counter > 15) | (control_word & END_INSTRUCTION)) {
             micro_counter = 0;
@@ -419,6 +488,7 @@ int main() {
         // usleep(1); // 1MHz
     }
 
-    endwin();
-    return 0;
+    if (use_ncurses) endwin();
+    printf("*** Emulator crash ***");
+    return EXIT_FAILURE;
 }
