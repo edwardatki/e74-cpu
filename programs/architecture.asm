@@ -229,6 +229,12 @@
     mov bc, [bc] => 0xB2
     mov de, [de] => 0xB3
 
+    add16 bc, de => 0xB4
+    add16 de, bc => 0xB5
+
+    sub16 bc, de => 0xB6
+    sub16 de, bc => 0xB7
+
     ; Psuedo instructions
     inc a => asm { add 1 }
     dec a => asm { sub 1 }

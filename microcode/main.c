@@ -1784,6 +1784,66 @@ int main() {
                                 // D = T
                                 addStep(nT_OUT | D_WRITE | ALU_OP_B);
                             }
+
+                            // ADD16 BC, DE
+                            if (opcode == 0xB4) {
+                                // T = E
+                                addStep(nDE_OUT | nAL_OUT | T_WRITE | ALU_OP_A);
+
+                                // C = C + T
+                                addStep(nBC_OUT | nAL_OUT | nT_OUT | C_WRITE | ALU_OP_A_PLUS_B | FLAGS_SYS_UPDATE);
+
+                                // T = D
+                                addStep(nDE_OUT | nAH_OUT | T_WRITE | ALU_OP_A);
+
+                                // B = B + T + Carry
+                                addStep(nBC_OUT | nAH_OUT | nT_OUT |  B_WRITE | (!sysCarry ? ALU_OP_A_PLUS_B_PLUS_1 : ALU_OP_A_PLUS_B));
+                            }
+
+                            // ADD16 DE, BC
+                            if (opcode == 0xB5) {
+                                // T = C
+                                addStep(nBC_OUT | nAL_OUT | T_WRITE | ALU_OP_A);
+
+                                // E = E + T
+                                addStep(nDE_OUT | nAL_OUT | nT_OUT | E_WRITE | ALU_OP_A_PLUS_B | FLAGS_SYS_UPDATE);
+
+                                // T = B
+                                addStep(nBC_OUT | nAH_OUT | T_WRITE | ALU_OP_A);
+
+                                // D = D + T + Carry
+                                addStep(nDE_OUT | nAH_OUT | nT_OUT |  D_WRITE | (!sysCarry ? ALU_OP_A_PLUS_B_PLUS_1 : ALU_OP_A_PLUS_B));
+                            }
+
+                            // SUB BC, DE
+                            if (opcode == 0xB6) {
+                                // T = E
+                                addStep(nDE_OUT | nAL_OUT | T_WRITE | ALU_OP_A);
+
+                                // C = C - T
+                                addStep(nBC_OUT | nAL_OUT | nT_OUT | C_WRITE | ALU_OP_A_MINUS_B | FLAGS_SYS_UPDATE);
+
+                                // T = D
+                                addStep(nDE_OUT | nAH_OUT | T_WRITE | ALU_OP_A);
+
+                                // B = B - T - Carry
+                                addStep(nBC_OUT | nAH_OUT | nT_OUT |  B_WRITE | (sysCarry ? ALU_OP_A_MINUS_B_MINUS_1 : ALU_OP_A_MINUS_B));
+                            }
+
+                            // SUB DE, BC
+                            if (opcode == 0xB7) {
+                                // T = C
+                                addStep(nBC_OUT | nAL_OUT | T_WRITE | ALU_OP_A);
+
+                                // E = E - T
+                                addStep(nDE_OUT | nAL_OUT | nT_OUT | E_WRITE | ALU_OP_A_MINUS_B | FLAGS_SYS_UPDATE);
+
+                                // T = B
+                                addStep(nBC_OUT | nAH_OUT | T_WRITE | ALU_OP_A);
+
+                                // D = D - T - Carry
+                                addStep(nDE_OUT | nAH_OUT | nT_OUT |  D_WRITE | (sysCarry ? ALU_OP_A_MINUS_B_MINUS_1 : ALU_OP_A_MINUS_B));
+                            }
                         }
 
                         finishOpcode();
